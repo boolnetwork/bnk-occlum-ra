@@ -152,57 +152,6 @@ static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
 pub struct DcapAttestation;
 
 impl DcapAttestation {
-    /*
-    pub fn create_report(addition: &[u8]) -> Result<DcapReport, DCAPError> {
-        // Workflow:
-        // (1) ocall to get the target_info structure (ti) and certificate revocation lists (CRLs)
-        // (2) call sgx_create_report with ti+data, produce an sgx_report_t
-        // (3) ocall to sgx_qe_get_quote to generate quote
-
-        let ti: sgx_target_info_t = SgxCall::qe_get_target_info()?;
-
-        // Fill data into report_data
-        let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
-        report_data.d[..addition.len()].clone_from_slice(addition);
-        let qe_report = rsgx_create_report(&ti, &report_data).map_err(|e| {
-            log::error!("Report creation failed {}", e);
-            return Error::SGXError(e);
-        })?;
-
-        log::debug!(
-            "ti mr_enclave: {:?}, flags: {}, xfrm: {}\n qe mr_enclave: {:?}, flas: {}, xfrm: {}",
-            ti.mr_enclave.m,
-            ti.attributes.flags,
-            ti.attributes.xfrm,
-            qe_report.body.mr_enclave.m,
-            qe_report.body.attributes.flags,
-            qe_report.body.attributes.xfrm
-        );
-        // if ti.mr_enclave.m != qe_report.body.mr_enclave.m
-        //     || ti.attributes.flags != qe_report.body.attributes.flags
-        //     || ti.attributes.xfrm != qe_report.body.attributes.xfrm
-        // {
-        //     log::error!("qe_report does not match current target_info!");
-        //     return Err(Error::SGXError(sgx_status_t::SGX_ERROR_UNEXPECTED));
-        // }
-
-        let quote_size = SgxCall::qe_get_quote_size()?;
-        let quote = SgxCall::qe_get_quote(&qe_report, quote_size)?;
-
-        // verify quote
-        //        let sgx_ret = ecall_get_target_info(eid, &get_target_info_ret, &qve_report_info.app_enclave_target_info);
-        //        if (sgx_ret != SGX_SUCCESS || get_target_info_ret != SGX_SUCCESS) {
-        //            printf("\tError in sgx_get_target_info. 0x%04x\n", get_target_info_ret);
-        //        }
-        //
-        //        // call DCAP quote verify library to set QvE loading policy
-        //        dcap_ret = sgx_qv_set_enclave_load_policy(SGX_QL_DEFAULT);
-        //        if (dcap_ret == SGX_QL_SUCCESS) {
-        //        }
-        Ok(DcapReport { quote })
-    }
-*/
-
     pub fn create_report(addition: &[u8]) -> Result<DcapReport, DCAPError> {
         let quote = generate_quote(addition.to_vec());
         Ok(DcapReport{ quote: quote })

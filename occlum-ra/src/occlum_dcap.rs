@@ -132,7 +132,6 @@ impl Drop for DcapDemo {
 }
 
 pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8>{
-    //let report_str = "Dcap demo sample";
     let mut dcap_demo = DcapDemo::new(report_str.clone());
 
     println!("Generate quote with report data : {:?}", report_str);

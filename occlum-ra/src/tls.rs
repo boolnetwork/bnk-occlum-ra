@@ -73,7 +73,6 @@ pub fn gen_ecc_cert(payload: Vec<u8>,
     // Generate public key bytes since both DER will use it
     let mut pub_key_bytes: Vec<u8> = Vec::with_capacity(0);
     pub_key_bytes.extend_from_slice(&key_pair);
-    println!("==pub_key_bytes=={:?}",pub_key_bytes);
     // Generate Certificate DER
     let cert_der = yasna::construct_der(|writer| {
         writer.write_sequence(|writer| {
