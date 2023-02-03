@@ -7,7 +7,7 @@ pub mod occlum_dcap;
 
 pub use tls::generate_cert;
 pub use verify::verify;
-use attestation::EnclaveFields;
+use attestation::{EnclaveFields, DcapAttestation};
 
 pub fn generate_cert_key() -> Result<(Vec<u8>,Vec<u8>),String>{
     println!("start generate_cert_key");
@@ -18,3 +18,7 @@ pub fn verify_cert(cert:&[u8], now: u64) -> Result<EnclaveFields, String>{
     verify(cert,now)
 }
 
+pub fn create_dcap_report(additional_info:Vec<u8>) -> Vec<u8>{
+    let report = DcapAttestation::create_report(&additional_info).unwrap();
+    report.into_payload()
+}
