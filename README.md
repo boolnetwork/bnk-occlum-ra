@@ -25,3 +25,33 @@ The output will be displayed on the terminal:
 ```
 5 + 1 = 6
 ```
+
+# USEAGE
+
+
+
+/occlum-ra/src/lib.rs:
+
+```
+// generate cert and key for tls server
+pub fn generate_cert_key() -> Result<(Vec<u8>,Vec<u8>),String>{
+    println!("start generate_cert_key");
+    generate_cert("".to_string())
+}
+
+// verify tls cert
+pub fn verify_cert(cert:&[u8], now: u64) -> Result<EnclaveFields, String>{
+    verify(cert,now)
+}
+
+// create dcap report
+pub fn create_dcap_report(additional_info:Vec<u8>) -> Vec<u8>{
+    let report = DcapAttestation::create_report(&additional_info).unwrap();
+    report.into_payload()
+}
+```
+
+
+test pass in HW mode
+
+![image](https://user-images.githubusercontent.com/29329767/216571968-1ddafbe4-bcdc-4ac2-b651-5fb65f846522.png)
