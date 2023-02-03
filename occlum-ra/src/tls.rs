@@ -14,18 +14,26 @@ use ring::{
     signature::{self, KeyPair},
 };
 
+use crate::attestation::{DcapAttestation, AttestationReport, AttestationStyle};
+
 pub const CERTEXPIRYDAYS: i64 = 90i64;
 const ISSUER: &str = "SafeMatrix";
 const SUBJECT: &str = "SafeMatrix";
 
 pub fn generate_cert(payload: String) -> Result<(Vec<u8>,Vec<u8>),String>{
-
     let  (key_pair, key_pair_doc) = ring_key_gen_pcks_8();
     let pub_key = key_pair.public_key().as_ref().to_vec();
     println!("==pub_key=={:?}",pub_key);
     println!("==key_pair_doc=={:?}", key_pair_doc);
 
-    let cert_der= match gen_ecc_cert(payload, key_pair, pub_key.clone()) {
+    let report = DcapAttestation::create_report(&pub_key[1..]).unwrap();
+
+    let re = AttestationReport {
+        style: AttestationStyle::DCAP,
+        data: report.into_payload(),
+    };
+
+    let cert_der= match gen_ecc_cert(re.into_payload(), key_pair, pub_key.clone()) {
         Ok(r) => r,
         Err(e) => {
             println!("Error in gen_ecc_cert: {:?}", e);
@@ -60,7 +68,7 @@ pub fn ring_key_gen_pcks_8() -> (signature::EcdsaKeyPair,Vec<u8>){
     (res,key_pair.as_ref().to_vec())
 }
 
-pub fn gen_ecc_cert(payload: String,
+pub fn gen_ecc_cert(payload: Vec<u8>,
                     prv_k: signature::EcdsaKeyPair , key_pair: Vec<u8>) -> Result<Vec<u8>, String> {
     // Generate public key bytes since both DER will use it
     let mut pub_key_bytes: Vec<u8> = Vec::with_capacity(0);
@@ -123,7 +131,7 @@ pub fn gen_ecc_cert(payload: String,
                     writer.write_sequence(|writer| {
                         writer.next().write_sequence(|writer| {
                             writer.next().write_oid(&ObjectIdentifier::from_slice(&[2,16,840,1,113730,1,13]));
-                            writer.next().write_bytes(&payload.into_bytes());
+                            writer.next().write_bytes(&payload);
                         });
                     });
                 });

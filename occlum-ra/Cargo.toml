@@ -15,7 +15,7 @@ yasna   = { git = "https://github.com/sgx-test/yasna.rs", features = ["bit-vec",
 bit-vec = "*"
 rand_core = { version = "0.5.1", features = ["getrandom"] }
 num-bigint = "0.4.2"
-ring = "0.16.20"
+ring = { default-features = false, features = ["alloc"] }
 sha2 = { version = "^0.8", default-features = false }
 sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk.git", rev = "v1.1.3" }
 itertools = { version = "0.8", default-features = false }
@@ -28,4 +28,4 @@ occlum_dcap = { git = "https://github.com/ABMatrix/occlum" }
 
 
 [patch.crates-io]
-ring = { version = "0.16.20", path = "../ring-0.16.20" }
+ring = { git = "https://github.com/sgx-test/ring" ,default-features = false, features = ["alloc"] }
