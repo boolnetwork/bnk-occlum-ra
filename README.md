@@ -49,6 +49,12 @@ pub fn create_dcap_report(additional_info:Vec<u8>) -> Vec<u8>{
     let report = DcapAttestation::create_report(&additional_info).unwrap();
     report.into_payload()
 }
+
+// verify dcap report
+pub fn verify_dcap_report(report: Vec<u8>, now: u64)  -> Result<EnclaveFields, String>{
+    verify_only_report(&report, now)
+}
+
 ```
 
 
