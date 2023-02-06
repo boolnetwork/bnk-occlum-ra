@@ -1,7 +1,7 @@
 use webpki::Error;
 use crate::attestation::{AttestationReport, AttestationStyle, DcapAttestation, EnclaveFields};
 
-pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<EnclaveFields, String> {
+pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<(Vec<u8>, Vec<u8>), String> {
     // Before we reach here, Webpki already verifed the cert is properly signed
     let report = match AttestationReport::from_payload(&report_vec) {
         Ok(r) => r,
@@ -19,7 +19,7 @@ pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<EnclaveFields, 
         Ok(enclave) => enclave ,
     };
 
-    Ok(enclave)
+    Ok((enclave.mr_enclave, enclave.report_data))
 }
 
 pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {

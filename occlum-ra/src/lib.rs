@@ -23,6 +23,6 @@ pub fn create_dcap_report(additional_info:Vec<u8>) -> Vec<u8>{
     report.into_payload()
 }
 
-pub fn verify_dcap_report(report: Vec<u8>, now: u64)  -> Result<EnclaveFields, String>{
+pub fn verify_dcap_report(report: Vec<u8>, now: u64)  -> Result<(Vec<u8>, Vec<u8>), String>{
     verify_only_report(&report, now)
 }
