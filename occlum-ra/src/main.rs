@@ -13,10 +13,6 @@ fn main() {
     println!("Hello, world!");
 
     let (key_der, cert_der) = generate_cert_key().unwrap();
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let res = verify_cert(&cert_der, now);
+    let res = verify_cert(&cert_der);
     println!("test result {:?}",res);
 }

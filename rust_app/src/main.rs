@@ -10,11 +10,7 @@ fn main() {
         Ok((a,b)) => b,
     };
 
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let res = verify_cert(&cert_der, now);
+    let res = verify_cert(&cert_der);
 
     println!("verify_cert result {:?}",res);
 
