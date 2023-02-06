@@ -1,25 +1,17 @@
 #![feature(cfg_target_has_atomic)]
 
 use core::fmt;
-#[cfg(feature = "sgx")]
-use itertools::Itertools;
 use log::error;
-#[cfg(feature = "sgx")]
-use rand::RngCore as _;
-#[cfg(feature = "sgx")]
-use sgx_tcrypto::rsgx_sha256_slice;
-#[cfg(feature = "sgx")]
-use sgx_tse::{rsgx_create_report, rsgx_verify_report};
 use sgx_types::*;
-#[cfg(feature = "sgx")]
-use std::untrusted::time::SystemTimeEx;
 use crate::dcap::DcapAttestationReport;
-//use webpki::Error;
 use crate::dcap::DCAPError;
 
 use serde::{self, Deserialize, Serialize};
 use itertools::Itertools;
 use crate::occlum_dcap::generate_quote;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+
 // use crate::types::{
 //     AttestationReport, AttestationStyle, DcapReport, EnclaveFields, EpidReport, ReportData,
 // };

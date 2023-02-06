@@ -5,7 +5,8 @@ use ring::signature::VerificationAlgorithm;
 use sgx_types::*;
 use sha2::Sha256;
 use sha2::Digest;
-
+use std::convert::TryFrom;
+use std::convert::TryInto;
 pub(crate) fn sha256_combine_slice(pk: &[u8], auth_data: &[u8]) -> [u8; 32] {
     let mut pk_ad = vec![];
     pk_ad.extend_from_slice(pk);
