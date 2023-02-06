@@ -18,9 +18,12 @@ pub fn verify_cert(cert:&[u8], now: u64) -> Result<EnclaveFields, String>{
     verify(cert,now)
 }
 
-pub fn create_dcap_report(additional_info:Vec<u8>) -> Vec<u8>{
-    let report = DcapAttestation::create_report(&additional_info).unwrap();
-    report.into_payload()
+pub fn create_dcap_report(additional_info:Vec<u8>) -> Result<Vec<u8>, String>{
+    let report = match DcapAttestation::create_report(&additional_info) {
+        Ok(r) => r,
+        Err(_) => return Err("create_report fail".to_string()),
+    };
+    Ok(report.into_payload())
 }
 
 pub fn verify_dcap_report(report: Vec<u8>, now: u64)  -> Result<(Vec<u8>, Vec<u8>), String>{
