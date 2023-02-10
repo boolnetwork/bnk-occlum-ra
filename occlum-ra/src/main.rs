@@ -10,9 +10,6 @@ pub mod attestation;
 pub mod occlum_dcap;
 
 fn main() {
-    println!("Hello, world!");
 
-    let (key_der, cert_der) = generate_cert_key().unwrap();
-    let res = verify_cert(&cert_der);
-    println!("test result {:?}",res);
+
 }
