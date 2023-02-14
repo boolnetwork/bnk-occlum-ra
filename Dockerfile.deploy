@@ -12,7 +12,7 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-i
     wget -qO - https://occlum.io/occlum-package-repos/debian/public.key | apt-key add - && \
     apt-get update && \
     apt-get install -y occlum libsgx-uae-service libsgx-dcap-ql libsgx-dcap-ql-dev libsgx-quote-ex-dev &&\
-    apt-get install libsgx-urts libsgx-dcap-ql libsgx-dcap-default-qpl
+    apt-get install -y libsgx-urts libsgx-dcap-ql libsgx-dcap-default-qpl
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 ENV PATH="/opt/occlum/build/bin:/usr/local/occlum/bin:$PATH"
