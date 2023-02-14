@@ -403,6 +403,7 @@ impl DerCertChain {
             .filter(|s| !s.is_empty())
             .collect();
 
+        println!("certs.len() {:?}",certs.len());
         if certs.len() != 3 {
             return Err(DCAPError::InvalidCertChain);
         }
