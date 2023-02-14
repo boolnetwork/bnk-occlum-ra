@@ -349,13 +349,20 @@ impl DcapAttestationReport {
 
         let ca_pk = DerCertChain::extract_public_key(&certs.ca_der)?;
         if ca_pk != INTEL_ROOT_PUB_KEY {
+            println!("===verify==not INTEL_ROOT_PUB_KEY=");
             return Err(DCAPError::InvalidCACert);
         }
+        println!("===verify==verify_cert_chain=");
 
         certs.verify_cert_chain(now)?;
+        println!("===verify==verify_cert_chain=ok=");
 
         let pck_pk = DerCertChain::extract_public_key(&certs.end_der)?;
+        println!("===verify==extract_public_key=ok=");
+
         if !self.is_valid_quote(pck_pk) {
+            println!("===verify==not is_valid_quote=ok=");
+
             return Err(DCAPError::InvalidQuote);
         }
         Ok(())

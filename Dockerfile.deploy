@@ -18,8 +18,8 @@ RUN apt-get clean && \
 ENV PATH="/opt/occlum/build/bin:/usr/local/occlum/bin:$PATH"
 RUN apt update && apt install m4 make -y
 COPY ./gmp_musl.sh ./
-RUN chmod +x ./gmp_musl.sh
-RUN ./gmp_musl.sh
+#RUN chmod +x ./gmp_musl.sh
+#RUN ./gmp_musl.sh
 
 # packager stage:
 # Users can build their own applications and put to occlum instance.
