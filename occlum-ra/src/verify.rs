@@ -37,7 +37,7 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
     };
 
     let enclave = match DcapAttestation::verify(&report, now){
-        Err(e) => return Err("DcapAttestation::verify err".to_string()),
+        Err(e) => return Err(format!("DcapAttestation::verify err {e:?}")),
         Ok(enclave) => enclave ,
     };
 

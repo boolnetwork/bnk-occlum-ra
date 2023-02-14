@@ -41,6 +41,7 @@ FROM base as deployer
 WORKDIR /root
 COPY --from=packager /RUST/occlum_instance/occlum_instance.tar.gz .
 RUN tar -xvzf occlum_instance.tar.gz
+COPY --from=packager /etc/sgx_default_qcnl.conf /etc
 RUN    mkdir -p /var/run/aesmd && \
     echo "LD_LIBRARY_PATH=/opt/intel/sgx-aesm-service/aesm nohup /opt/intel/sgx-aesm-service/aesm/aesm_service --no-daemon >/dev/null 2>&1 &" > /root/.bashrc
 

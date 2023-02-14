@@ -2,8 +2,8 @@
 set -e
 
 # build gmp-musl
-chmod +x ./gmp_musl.sh
-./gmp_musl.sh
+#chmod +x ./gmp_musl.sh
+#./gmp_musl.sh
 
 # compile rust_app
 pushd rust_app
