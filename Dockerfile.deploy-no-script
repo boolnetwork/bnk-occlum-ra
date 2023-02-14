@@ -1,0 +1,47 @@
+FROM ubuntu:20.04 as base
+
+ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
+RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends gnupg wget ca-certificates jq && \
+    echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main' | tee /etc/apt/sources.list.d/intel-sgx.list && \
+    wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - && \
+    echo 'deb [arch=amd64] https://occlum.io/occlum-package-repos/debian focal main' | tee /etc/apt/sources.list.d/occlum.list && \
+    wget -qO - https://occlum.io/occlum-package-repos/debian/public.key | apt-key add - && \
+    apt-get update && \
+    apt-get install -y occlum libsgx-uae-service libsgx-dcap-ql&& \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+ENV PATH="/opt/occlum/build/bin:/usr/local/occlum/bin:$PATH"
+
+
+FROM occlum/occlum:0.29.1-ubuntu20.04 as packager
+
+WORKDIR /RUST
+COPY ./mpc ./mpc
+COPY ./occlum ./occlum
+WORKDIR /RUST/occlum/servers
+RUN pushd rust_app && occlum-cargo build && popd && \
+    rm -rf occlum_instance && mkdir occlum_instance && cd occlum_instance && \
+    occlum init && rm -rf image && \
+    new_json="$(jq '.resource_limits.kernel_space_heap_size = "320MB" |
+                    .resource_limits.kernel_space_stack_size = "30MB" |
+                    .resource_limits.user_space_size = "3000MB" |
+                    .process.default_heap_size = "90MB"  |
+                    .process.default_stack_size = "320MB" |
+                    .process.default_mmap_size = "1000MB"' Occlum.json)" && \
+    echo "${new_json}" > Occlum.json  && \
+    cp -r ../rust_app/key_config.toml ../occlum_instance/ && \
+    copy_bom -f ../rust-demo.yaml --root image --include-dir /opt/occlum/etc/template && \
+    occlum build && \
+    occlum package --debug
+
+
+FROM base as deployer
+
+WORKDIR /root
+COPY --from=packager /RUST/occlum/servers/occlum_instance/occlum_instance.tar.gz .
+RUN tar -xvzf occlum_instance.tar.gz
+COPY --from=packager /RUST/occlum/servers/occlum_instance/key_config.toml /root/occlum_instance
+RUN    mkdir -p /var/run/aesmd && \
+    echo "LD_LIBRARY_PATH=/opt/intel/sgx-aesm-service/aesm nohup /opt/intel/sgx-aesm-service/aesm/aesm_service --no-daemon >/dev/null 2>&1 &" > /root/.bashrc
+
+WORKDIR /root
