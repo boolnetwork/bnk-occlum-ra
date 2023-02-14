@@ -33,6 +33,8 @@ pub fn generate_cert(payload: String) -> Result<(Vec<u8>,Vec<u8>),String>{
         data: report.into_payload(),
     };
 
+    println!("DCAP Report{:?}",re);
+
     let cert_der= match gen_ecc_cert(re.into_payload(), key_pair, pub_key.clone()) {
         Ok(r) => r,
         Err(e) => {
