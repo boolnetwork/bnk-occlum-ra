@@ -156,9 +156,9 @@ impl DcapAttestation {
             error!("invalid dcap report.");
             DCAPError::VerifyFailed
         })?;
-
         // Verify attestation report
         let dar: DcapAttestationReport = DcapAttestationReport::from_bytes(report.quote)?;
+
         dar.verify_quote(now)?;
 
         let sgx_quote = dar.quote;

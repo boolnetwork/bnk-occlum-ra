@@ -355,6 +355,7 @@ impl DcapAttestationReport {
         certs.verify_cert_chain(now)?;
 
         let pck_pk = DerCertChain::extract_public_key(&certs.end_der)?;
+
         if !self.is_valid_quote(pck_pk) {
             return Err(DCAPError::InvalidQuote);
         }
@@ -382,6 +383,7 @@ impl DerCertChain {
     const PEM_END_STRING_X509: &'static str = "-----END CERTIFICATE-----";
 
     pub fn from_bytes(data: Vec<u8>) -> Result<Self, DCAPError> {
+        let data = if data[data.len()-1] == 0 { data[..data.len()-2].to_vec() } else { data };
         let empty = "";
         let full_chain = String::from_utf8(data).map_err(|_| DCAPError::InvalidPemCert)?;
         let certs: Vec<&str> = full_chain

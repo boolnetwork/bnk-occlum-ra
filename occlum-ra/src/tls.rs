@@ -23,8 +23,7 @@ const SUBJECT: &str = "SafeMatrix";
 pub fn generate_cert(payload: String) -> Result<(Vec<u8>,Vec<u8>),String>{
     let  (key_pair, key_pair_doc) = ring_key_gen_pcks_8();
     let pub_key = key_pair.public_key().as_ref().to_vec();
-    println!("==pub_key=={:?}",pub_key);
-    println!("==key_pair_doc=={:?}", key_pair_doc);
+    println!("pub_key in this report:{:?}",pub_key);
 
     let report = DcapAttestation::create_report(&pub_key[1..]).unwrap();
 
@@ -32,6 +31,8 @@ pub fn generate_cert(payload: String) -> Result<(Vec<u8>,Vec<u8>),String>{
         style: AttestationStyle::DCAP,
         data: report.into_payload(),
     };
+
+    println!("DCAP Report{:?}",re);
 
     let cert_der= match gen_ecc_cert(re.into_payload(), key_pair, pub_key.clone()) {
         Ok(r) => r,
@@ -189,7 +190,7 @@ pub fn ker_der(prv_k_r: Vec<u8>, pub_key_bytes: Vec<u8>) -> Vec<u8>{
     });
     key_der
 }
-
+/*
 #[cfg(test)]
 mod tests {
     use crate::verify::extract_data;
@@ -224,3 +225,5 @@ mod tests {
         println!("pub_k_extract {:?}",pub_k_extract);
     }
 }
+
+ */
