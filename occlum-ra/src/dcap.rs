@@ -1,12 +1,11 @@
-use core::{fmt, slice};
 use core::mem::size_of;
+use core::{fmt, slice};
 use itertools::Itertools;
 use ring::signature::VerificationAlgorithm;
 use sgx_types::*;
-use sha2::Sha256;
 use sha2::Digest;
+use sha2::Sha256;
 use std::convert::TryFrom;
-use std::convert::TryInto;
 pub(crate) fn sha256_combine_slice(pk: &[u8], auth_data: &[u8]) -> [u8; 32] {
     let mut pk_ad = vec![];
     pk_ad.extend_from_slice(pk);
@@ -50,7 +49,7 @@ impl Quote {
     }
 
     fn report_body(&self) -> sgx_report_body_t {
-        unsafe { self.inner.report_body }
+        self.inner.report_body
     }
 
     fn signature_data_len(&self) -> usize {
@@ -104,7 +103,7 @@ pub struct ReportBody {
 }
 
 impl ReportBody {
-    pub fn new(inner:  sgx_report_body_t) -> Self {
+    pub fn new(inner: sgx_report_body_t) -> Self {
         Self { inner }
     }
 }
@@ -159,7 +158,7 @@ impl fmt::Display for QlEcdsaSig {
         write!(
             f,
             "\t qe3_report: {}",
-            ReportBody::new(unsafe { self.inner.qe3_report })
+            ReportBody::new(self.inner.qe3_report)
         )?;
         write!(
             f,
@@ -184,24 +183,13 @@ const SGX_QL_ECDSA_SIG_DATA_LEN: usize = size_of::<sgx_ql_ecdsa_sig_data_t>();
 const SGX_QL_AUTH_HEADER_LEN: usize = size_of::<sgx_ql_auth_data_t>();
 const SGX_QL_CERTIFICATION_HEADER_LEN: usize = size_of::<sgx_ql_certification_data_t>();
 
+#[derive(Default)]
 pub struct DcapAttestationReport {
     pub quote: Quote,
     pub ecdsa_sig: QlEcdsaSig,
     pub auth_data: Vec<u8>,
     pub cert_header: sgx_ql_certification_data_t,
     pub cert_data: Vec<u8>,
-}
-
-impl Default for DcapAttestationReport {
-    fn default() -> Self {
-        Self {
-            quote: Quote::default(),
-            ecdsa_sig: QlEcdsaSig::default(),
-            auth_data: vec![],
-            cert_header: sgx_ql_certification_data_t::default(),
-            cert_data: vec![],
-        }
-    }
 }
 
 impl DcapAttestationReport {
@@ -363,7 +351,7 @@ impl DcapAttestationReport {
     }
 }
 
-type SignatureAlgorithms = &'static [&'static webpki::SignatureAlgorithm];
+pub type SignatureAlgorithms = &'static [&'static webpki::SignatureAlgorithm];
 static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
     &webpki::ECDSA_P256_SHA256,
     &webpki::ECDSA_P256_SHA384,
@@ -383,7 +371,11 @@ impl DerCertChain {
     const PEM_END_STRING_X509: &'static str = "-----END CERTIFICATE-----";
 
     pub fn from_bytes(data: Vec<u8>) -> Result<Self, DCAPError> {
-        let data = if data[data.len()-1] == 0 { data[..data.len()-2].to_vec() } else { data };
+        let data = if data[data.len() - 1] == 0 {
+            data[..data.len() - 2].to_vec()
+        } else {
+            data
+        };
         let empty = "";
         let full_chain = String::from_utf8(data).map_err(|_| DCAPError::InvalidPemCert)?;
         let certs: Vec<&str> = full_chain
@@ -402,9 +394,9 @@ impl DerCertChain {
             return Err(DCAPError::InvalidCertChain);
         }
         Ok(Self {
-            end_der: certs[0].to_string().replace("\n", ""),
-            pck_der: certs[1].to_string().replace("\n", ""),
-            ca_der: certs[2].to_string().replace("\n", ""),
+            end_der: certs[0].to_string().replace('\n', ""),
+            pck_der: certs[1].to_string().replace('\n', ""),
+            ca_der: certs[2].to_string().replace('\n', ""),
         })
     }
 
@@ -418,7 +410,7 @@ impl DerCertChain {
                     .position(|window| window == prime256v1_oid)
                     .ok_or(DCAPError::InvalidPemCert)?;
                 offset += 11; // 10 + TAG (0x03)
-                // Obtain Public Key length
+                              // Obtain Public Key length
                 let mut len = decoded_der[offset] as usize;
                 if len > 0x80 {
                     len = (decoded_der[offset + 1] as usize) * 0x100
@@ -459,7 +451,7 @@ impl DerCertChain {
 
         let trust_anchors: Vec<webpki::TrustAnchor> = vec![ca];
         let time_now = webpki::Time::from_seconds_since_unix_epoch(now);
-        let _ = end_cert
+        end_cert
             .verify_is_valid_tls_server_cert(
                 SUPPORTED_SIG_ALGS,
                 &webpki::TlsServerTrustAnchors(&trust_anchors),

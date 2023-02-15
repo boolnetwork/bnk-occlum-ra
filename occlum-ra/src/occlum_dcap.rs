@@ -1,7 +1,6 @@
-use std::str;
-use std::io::Result;
-use std::convert::TryFrom;
 use occlum_dcap::*;
+use std::convert::TryFrom;
+use std::io::Result;
 
 struct DcapDemo {
     dcap_quote: DcapQuote,
@@ -9,7 +8,7 @@ struct DcapDemo {
     quote_buf: Vec<u8>,
     req_data: sgx_report_data_t,
     supplemental_size: u32,
-    suppl_buf: Vec<u8>
+    suppl_buf: Vec<u8>,
 }
 
 impl DcapDemo {
@@ -28,20 +27,22 @@ impl DcapDemo {
 
         Self {
             dcap_quote: dcap,
-            quote_size: quote_size,
-            quote_buf: quote_buf,
-            req_data: req_data,
-            supplemental_size: supplemental_size,
-            suppl_buf: suppl_buf
+            quote_size,
+            quote_buf,
+            req_data,
+            supplemental_size,
+            suppl_buf,
         }
     }
 
     fn dcap_quote_gen(&mut self) -> Result<i32> {
-        self.dcap_quote.generate_quote(self.quote_buf.as_mut_ptr(), &mut self.req_data).unwrap();
+        self.dcap_quote
+            .generate_quote(self.quote_buf.as_mut_ptr(), &self.req_data)
+            .unwrap();
 
         println!("DCAP generate quote successfully");
 
-        Ok( 0 )
+        Ok(0)
     }
 
     // Quote has type `sgx_quote3_t` and is structured as
@@ -54,8 +55,8 @@ impl DcapDemo {
 
     fn dcap_quote_get_report_body(&mut self) -> Result<*const sgx_report_body_t> {
         let report_body_offset = std::mem::size_of::<sgx_quote_header_t>();
-        let report_body: *const sgx_report_body_t
-            = (self.quote_buf[report_body_offset..]).as_ptr() as _;
+        let report_body: *const sgx_report_body_t =
+            (self.quote_buf[report_body_offset..]).as_ptr() as _;
 
         Ok(report_body)
     }
@@ -83,7 +84,7 @@ impl DcapDemo {
         self.dcap_quote.verify_quote(&mut verify_arg).unwrap();
         println!("DCAP verify quote successfully");
 
-        Ok( quote_verification_result )
+        Ok(quote_verification_result)
     }
 
     fn dcap_dump_quote_info(&mut self) {
@@ -131,7 +132,7 @@ impl Drop for DcapDemo {
     }
 }
 
-pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8>{
+pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
     let mut dcap_demo = DcapDemo::new(report_str.clone());
 
     println!("Generate quote with report data : {:?}", report_str);
@@ -139,9 +140,9 @@ pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8>{
 
     // compare the report data in quote buffer
     let report_data_ptr = dcap_demo.dcap_quote_get_report_data().unwrap();
-    let string = unsafe { (*report_data_ptr).d.to_vec() } ;
+    let string = unsafe { (*report_data_ptr).d.to_vec() };
 
-    if report_str == &string[..report_str.len()] {
+    if report_str == string[..report_str.len()] {
         println!("Report data from Quote: '{:?}' exactly matches.", string);
     } else {
         println!("Report data from Quote: '{:?}' doesn't match !!!", string);
@@ -161,16 +162,22 @@ pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8>{
     match result {
         sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OK => {
             println!("Succeed to verify the quote!");
-        },
-        sgx_ql_qv_result_t::SGX_QL_QV_RESULT_CONFIG_NEEDED |
-        sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OUT_OF_DATE |
-        sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OUT_OF_DATE_CONFIG_NEEDED |
-        sgx_ql_qv_result_t::SGX_QL_QV_RESULT_SW_HARDENING_NEEDED |
-        sgx_ql_qv_result_t::SGX_QL_QV_RESULT_CONFIG_AND_SW_HARDENING_NEEDED => {
-            println!("WARN: App: Verification completed with Non-terminal result: {:?}", result);
-        },
-        _ => println!("Error: App: Verification completed with Terminal result: {:?}", result),
+        }
+        sgx_ql_qv_result_t::SGX_QL_QV_RESULT_CONFIG_NEEDED
+        | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OUT_OF_DATE
+        | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OUT_OF_DATE_CONFIG_NEEDED
+        | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_SW_HARDENING_NEEDED
+        | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_CONFIG_AND_SW_HARDENING_NEEDED => {
+            println!(
+                "WARN: App: Verification completed with Non-terminal result: {:?}",
+                result
+            );
+        }
+        _ => println!(
+            "Error: App: Verification completed with Terminal result: {:?}",
+            result
+        ),
     }
 
-    return dcap_demo.quote_buf.clone();
+    dcap_demo.quote_buf.clone()
 }

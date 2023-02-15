@@ -1,22 +1,18 @@
-#![feature(cfg_target_has_atomic)]
-
+use crate::dcap::DCAPError;
+use crate::dcap::DcapAttestationReport;
 use core::fmt;
 use log::error;
-use sgx_types::*;
-use crate::dcap::DcapAttestationReport;
-use crate::dcap::DCAPError;
 
-use serde::{self, Deserialize, Serialize};
-use itertools::Itertools;
 use crate::occlum_dcap::generate_quote;
-use std::convert::TryFrom;
-use std::convert::TryInto;
+use itertools::Itertools;
+use serde::{self, Deserialize, Serialize};
 
+use std::convert::TryInto;
 // use crate::types::{
 //     AttestationReport, AttestationStyle, DcapReport, EnclaveFields, EpidReport, ReportData,
 // };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AttestationStyle {
     EPID = 1,
     DCAP = 2,
@@ -133,20 +129,12 @@ pub static IAS_SERVER_ROOTS: &[webpki::TrustAnchor] = &[
     },
 ];
 
-type SignatureAlgorithms = &'static [&'static webpki::SignatureAlgorithm];
-static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
-    &webpki::ECDSA_P256_SHA256,
-    &webpki::ECDSA_P256_SHA384,
-    &webpki::ECDSA_P384_SHA256,
-    &webpki::ECDSA_P384_SHA384,
-];
-
 pub struct DcapAttestation;
 
 impl DcapAttestation {
     pub fn create_report(addition: &[u8]) -> Result<DcapReport, DCAPError> {
         let quote = generate_quote(addition.to_vec());
-        Ok(DcapReport{ quote: quote })
+        Ok(DcapReport { quote })
     }
 
     pub fn verify(report: &AttestationReport, now: u64) -> Result<EnclaveFields, DCAPError> {
