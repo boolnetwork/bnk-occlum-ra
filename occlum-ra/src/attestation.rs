@@ -1,10 +1,10 @@
 use crate::dcap::DCAPError;
 use crate::dcap::DcapAttestationReport;
-use core::fmt;
-use log::error;
-
+#[cfg(not(feature = "no_std"))]
 use crate::occlum_dcap::generate_quote;
+use core::fmt;
 use itertools::Itertools;
+use log::error;
 use serde::{self, Deserialize, Serialize};
 
 use std::convert::TryInto;
@@ -132,6 +132,7 @@ pub static IAS_SERVER_ROOTS: &[webpki::TrustAnchor] = &[
 pub struct DcapAttestation;
 
 impl DcapAttestation {
+    #[cfg(not(feature = "no_std"))]
     pub fn create_report(addition: &[u8]) -> Result<DcapReport, DCAPError> {
         let quote = generate_quote(addition.to_vec());
         Ok(DcapReport { quote })

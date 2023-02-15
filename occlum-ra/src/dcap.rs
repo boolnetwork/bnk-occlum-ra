@@ -442,11 +442,13 @@ impl DerCertChain {
             .map_err(|_| DCAPError::InvalidPemCert)?;
         let ca_der = base64::decode_config(&self.ca_der, base64::STANDARD)
             .map_err(|_| DCAPError::InvalidCACert)?;
-        let ca = webpki::TrustAnchor::try_from_cert_der(&ca_der)
+        //let ca = webpki::TrustAnchor::try_from_cert_der(&ca_der).map_err(|_| DCAPError::InvalidCACert)?;
+        let ca = webpki::trust_anchor_util::cert_der_as_trust_anchor(&ca_der)
             .map_err(|_| DCAPError::InvalidCACert)?;
 
         let chain: Vec<&[u8]> = vec![&pck_der, &ca_der];
-        let end_cert = webpki::EndEntityCert::try_from(end_der.as_ref())
+        //let end_cert = webpki::EndEntityCert::try_from(end_der.as_ref()).map_err(|_| DCAPError::InvalidPemCert)?;
+        let end_cert = webpki::EndEntityCert::from(end_der.as_ref())
             .map_err(|_| DCAPError::InvalidPemCert)?;
 
         let trust_anchors: Vec<webpki::TrustAnchor> = vec![ca];
@@ -454,7 +456,7 @@ impl DerCertChain {
         end_cert
             .verify_is_valid_tls_server_cert(
                 SUPPORTED_SIG_ALGS,
-                &webpki::TlsServerTrustAnchors(&trust_anchors),
+                &webpki::TLSServerTrustAnchors(&trust_anchors),
                 &chain,
                 time_now,
             )
