@@ -10,6 +10,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub use tls::generate_cert;
 pub use verify::{verify, verify_only_report};
 
+use sgx_types::sgx_key_128bit_t;
+extern crate occlum_dcap as occlum;
+
 /// return (key_der,cert_der)
 pub fn generate_cert_key() -> Result<(Vec<u8>, Vec<u8>), String> {
     println!("start generate_cert_key");
@@ -41,4 +44,15 @@ pub fn verify_dcap_report(report: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), String>
         .unwrap()
         .as_secs();
     verify_only_report(&report, now)
+}
+
+
+pub fn get_fingerprint() -> sgx_key_128bit_t{
+    let report_str = "GET KEY";
+    let mut dcap_demo = occlum_dcap::DcapDemo::new(report_str.as_bytes().to_vec());
+    println!("Generate quote with report data : {:?}", report_str);
+    dcap_demo.dcap_quote_gen().unwrap();
+    let report = dcap_demo.dcap_quote_get_report_body().unwrap();
+
+    occlum::get_key(report)
 }

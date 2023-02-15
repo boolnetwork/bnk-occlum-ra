@@ -2,7 +2,7 @@ use occlum_dcap::*;
 use std::convert::TryFrom;
 use std::io::Result;
 
-struct DcapDemo {
+pub struct DcapDemo {
     dcap_quote: DcapQuote,
     quote_size: u32,
     quote_buf: Vec<u8>,
@@ -35,7 +35,7 @@ impl DcapDemo {
         }
     }
 
-    fn dcap_quote_gen(&mut self) -> Result<i32> {
+    pub fn dcap_quote_gen(&mut self) -> Result<i32> {
         self.dcap_quote
             .generate_quote(self.quote_buf.as_mut_ptr(), &self.req_data)
             .unwrap();
@@ -53,7 +53,7 @@ impl DcapDemo {
     //     pub signature_data: [uint8_t; 0],
     // }
 
-    fn dcap_quote_get_report_body(&mut self) -> Result<*const sgx_report_body_t> {
+    pub fn dcap_quote_get_report_body(&mut self) -> Result<*const sgx_report_body_t> {
         let report_body_offset = std::mem::size_of::<sgx_quote_header_t>();
         let report_body: *const sgx_report_body_t =
             (self.quote_buf[report_body_offset..]).as_ptr() as _;
