@@ -35,6 +35,7 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
         }
     };
 
+
     let enclave = match DcapAttestation::verify(&report, now) {
         Err(e) => return Err(format!("DcapAttestation::verify err {e:?}")),
         Ok(enclave) => enclave,
@@ -52,6 +53,7 @@ pub(crate) fn extract_data(cert_der: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String
     let mut offset = cert_der
         .windows(prime256v1_oid.len())
         .position(|window| window == prime256v1_oid)
+
         .ok_or_else(|| "Error::InvalidSelfSignedCert".to_string())?;
     offset += 11; // 10 + TAG (0x03)
 
@@ -73,6 +75,7 @@ pub(crate) fn extract_data(cert_der: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String
     let mut offset = cert_der
         .windows(ns_cmt_oid.len())
         .position(|window| window == ns_cmt_oid)
+
         .ok_or_else(|| "Error::InvalidSelfSignedCert".to_string())?;
     offset += 12; // 11 + TAG (0x04)
 
