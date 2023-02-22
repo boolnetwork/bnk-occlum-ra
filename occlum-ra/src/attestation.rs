@@ -6,11 +6,33 @@ use core::fmt;
 use itertools::Itertools;
 use log::error;
 use serde::{self, Deserialize, Serialize};
-
+use std::convert::TryFrom;
 use std::convert::TryInto;
+use occlum_dcap::sgx_quote_t;
+use crate::dcap::SUPPORTED_SIG_ALGS;
 // use crate::types::{
 //     AttestationReport, AttestationStyle, DcapReport, EnclaveFields, EpidReport, ReportData,
 // };
+
+#[derive(Default, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReportData {
+    pub id: String,
+    pub timestamp: String,
+    pub version: u32,
+    pub isv_enclave_quote_status: String,
+    pub isv_enclave_quote_body: String,
+    #[serde(alias = "advisoryURL")]
+    pub advisory_url: Option<String>,
+    #[serde(alias = "advisoryIDs")]
+    pub advisory_ids: Option<Vec<String>>,
+    pub nonce: Option<String>,
+    pub epid_pseudonym: Option<String>,
+    pub revocation_reason: Option<u32>,
+    pub pse_manifest_status: Option<String>,
+    pub pse_manifest_hash: Option<String>,
+    pub platform_info_blob: Option<String>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AttestationStyle {
@@ -129,6 +151,39 @@ pub static IAS_SERVER_ROOTS: &[webpki::TrustAnchor] = &[
     },
 ];
 
+pub const IAS_REPORT_CA : &str = "-----BEGIN CERTIFICATE-----
+MIIFSzCCA7OgAwIBAgIJANEHdl0yo7CUMA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNV
+BAYTAlVTMQswCQYDVQQIDAJDQTEUMBIGA1UEBwwLU2FudGEgQ2xhcmExGjAYBgNV
+BAoMEUludGVsIENvcnBvcmF0aW9uMTAwLgYDVQQDDCdJbnRlbCBTR1ggQXR0ZXN0
+YXRpb24gUmVwb3J0IFNpZ25pbmcgQ0EwIBcNMTYxMTE0MTUzNzMxWhgPMjA0OTEy
+MzEyMzU5NTlaMH4xCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTEUMBIGA1UEBwwL
+U2FudGEgQ2xhcmExGjAYBgNVBAoMEUludGVsIENvcnBvcmF0aW9uMTAwLgYDVQQD
+DCdJbnRlbCBTR1ggQXR0ZXN0YXRpb24gUmVwb3J0IFNpZ25pbmcgQ0EwggGiMA0G
+CSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQCfPGR+tXc8u1EtJzLA10Feu1Wg+p7e
+LmSRmeaCHbkQ1TF3Nwl3RmpqXkeGzNLd69QUnWovYyVSndEMyYc3sHecGgfinEeh
+rgBJSEdsSJ9FpaFdesjsxqzGRa20PYdnnfWcCTvFoulpbFR4VBuXnnVLVzkUvlXT
+L/TAnd8nIZk0zZkFJ7P5LtePvykkar7LcSQO85wtcQe0R1Raf/sQ6wYKaKmFgCGe
+NpEJUmg4ktal4qgIAxk+QHUxQE42sxViN5mqglB0QJdUot/o9a/V/mMeH8KvOAiQ
+byinkNndn+Bgk5sSV5DFgF0DffVqmVMblt5p3jPtImzBIH0QQrXJq39AT8cRwP5H
+afuVeLHcDsRp6hol4P+ZFIhu8mmbI1u0hH3W/0C2BuYXB5PC+5izFFh/nP0lc2Lf
+6rELO9LZdnOhpL1ExFOq9H/B8tPQ84T3Sgb4nAifDabNt/zu6MmCGo5U8lwEFtGM
+RoOaX4AS+909x00lYnmtwsDVWv9vBiJCXRsCAwEAAaOByTCBxjBgBgNVHR8EWTBX
+MFWgU6BRhk9odHRwOi8vdHJ1c3RlZHNlcnZpY2VzLmludGVsLmNvbS9jb250ZW50
+L0NSTC9TR1gvQXR0ZXN0YXRpb25SZXBvcnRTaWduaW5nQ0EuY3JsMB0GA1UdDgQW
+BBR4Q3t2pn680K9+QjfrNXw7hwFRPDAfBgNVHSMEGDAWgBR4Q3t2pn680K9+Qjfr
+NXw7hwFRPDAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIBADANBgkq
+hkiG9w0BAQsFAAOCAYEAeF8tYMXICvQqeXYQITkV2oLJsp6J4JAqJabHWxYJHGir
+IEqucRiJSSx+HjIJEUVaj8E0QjEud6Y5lNmXlcjqRXaCPOqK0eGRz6hi+ripMtPZ
+sFNaBwLQVV905SDjAzDzNIDnrcnXyB4gcDFCvwDFKKgLRjOB/WAqgscDUoGq5ZVi
+zLUzTqiQPmULAQaB9c6Oti6snEFJiCQ67JLyW/E83/frzCmO5Ru6WjU4tmsmy8Ra
+Ud4APK0wZTGtfPXU7w+IBdG5Ez0kE1qzxGQaL4gINJ1zMyleDnbuS8UicjJijvqA
+152Sq049ESDz+1rRGc2NVEqh1KaGXmtXvqxXcTB+Ljy5Bw2ke0v8iGngFBPqCTVB
+3op5KBG3RjbF6RRSzwzuWfL7QErNC8WEy5yDVARzTA5+xmBc388v9Dm21HGfcC8O
+DD+gT9sSpssq0ascmvH49MOgjt1yoysLtdCtJW/9FZpoOypaHx0R+mJTLwPXVMrv
+DaVzWh5aiEx+idkSGMnX
+-----END CERTIFICATE-----";
+
+
 pub struct DcapAttestation;
 
 impl DcapAttestation {
@@ -195,9 +250,120 @@ impl IasAttestation {
         Ok(re)
     }
 
-    pub fn verify(report: &AttestationReport, now: u64) -> Result<EnclaveFields, String> {
+    pub fn verify(report: &AttestationReport, now: u64) -> Result<EnclaveFields, DCAPError> {
+        assert!(report.style == AttestationStyle::EPID);
 
-        Ok(EnclaveFields::default())
+        let report = EpidReport::from_payload(&report.data).map_err(|_| {
+            error!("invalid epid report.");
+            DCAPError::VerifyFailed
+        })?;
+
+        Self::verify_cert(&report, now)?;
+
+        // Verify attestation report
+        let report_data: ReportData =
+            serde_json::from_slice(&report.ra_report).map_err(|_| DCAPError::VerifyFailed)?;
+
+        log::trace!("attn_report: {:?}", report_data);
+
+        let raw_report_timestamp = report_data.timestamp + "Z";
+        let report_timestamp = chrono::DateTime::parse_from_rfc3339(&raw_report_timestamp)
+            .or(Err(DCAPError::VerifyFailed))?
+            .timestamp();
+
+        if (now as i64 - report_timestamp) >= OUTDATED {
+            error!("[EPID VERIFY ERROR]OUTDATED");
+            return Err(DCAPError::VerifyFailed);
+        }
+
+        let quote = base64::decode(&report_data.isv_enclave_quote_body)
+            .map_err(|_| {error!("[EPID VERIFY ERROR]OUTDATED");
+                         return DCAPError::VerifyFailed;})?;
+        log::trace!("Quote = {:?}", quote);
+
+        if quote.len() < 432 {
+            error!("[EPID VERIFY ERROR]quote.len() < 432");
+            return Err(DCAPError::VerifyFailed);
+        }
+
+        let sgx_quote: sgx_quote_t = unsafe { std::ptr::read(quote.as_ptr() as *const _) };
+
+        let mut enclave_field = EnclaveFields::default();
+        enclave_field.version = sgx_quote.version;
+        enclave_field.sign_type = sgx_quote.sign_type;
+        enclave_field.isv_enclave_quote_status = report_data.isv_enclave_quote_status;
+        enclave_field.mr_enclave = sgx_quote
+            .report_body
+            .mr_enclave
+            .m
+            .try_into()
+            .map_err(|_| DCAPError::VerifyFailed)?;
+        enclave_field.mr_signer = sgx_quote
+            .report_body
+            .mr_signer
+            .m
+            .try_into()
+            .map_err(|_| DCAPError::VerifyFailed)?;
+        enclave_field.report_data = sgx_quote
+            .report_body
+            .report_data
+            .d
+            .try_into()
+            .map_err(|_| DCAPError::VerifyFailed)?;
+
+        Ok(enclave_field)
+    }
+
+    fn verify_cert(report: &EpidReport, now: u64) -> Result<(), DCAPError> {
+        let sig = base64::decode(&report.signature).map_err(|_| DCAPError::VerifyFailed)?;
+        let sig_cert_dec = base64::decode_config(&report.cert_raw, base64::STANDARD)
+            .map_err(|_|{error!("[EPID VERIFY ERROR]sig_cert_dec base64 decode_config");
+                return DCAPError::VerifyFailed;})?;
+        let sig_cert = webpki::EndEntityCert::from(sig_cert_dec.as_ref())
+            .map_err(|_| {error!("[EPID VERIFY ERROR]sig_cert from EndEntityCert ");
+                return DCAPError::VerifyFailed;})?;
+        println!("sig_cert_dec {:?}",sig_cert_dec);
+        let chain: Vec<&[u8]> = vec![];
+
+        // let mut ias_ca_stripped = IAS_REPORT_CA.as_bytes().to_vec();
+        // ias_ca_stripped.retain(|&x| x != 0x0d && x != 0x0a);
+        // let head_len = "-----BEGIN CERTIFICATE-----".len();
+        // let tail_len = "-----END CERTIFICATE-----".len();
+        // let full_len = ias_ca_stripped.len();
+        // let ias_ca_core : &[u8] = &ias_ca_stripped[head_len..full_len - tail_len];
+        // let ias_cert_dec = base64::decode_config(ias_ca_core, base64::MIME).unwrap();
+        //
+        // let binding = IAS_REPORT_CA;
+        // let mut ca_reader = std::io::BufReader::new(&binding.as_bytes()[..]);
+        //
+        // let mut root_store = rustls::RootCertStore::empty();
+        // root_store.add_pem_file(&mut ca_reader).expect("Failed to add CA");
+        //
+        // let trust_anchors: Vec<webpki::TrustAnchor> = root_store
+        //     .roots
+        //     .iter()
+        //     .map(|cert| cert.to_trust_anchor())
+        //     .collect();
+        //
+        // let mut chain:Vec<&[u8]> = Vec::new();
+        // chain.push(&ias_cert_dec);
+
+
+        let time_now = webpki::Time::from_seconds_since_unix_epoch(now);
+        sig_cert.verify_is_valid_tls_server_cert(
+            SUPPORTED_SIG_ALGS,
+            &webpki::TLSServerTrustAnchors(IAS_SERVER_ROOTS),
+            &chain,
+            time_now,
+        ).map_err(|e| { error!("[EPID VERIFY ERROR]verify_is_valid_tls_server_cert fail {:?}",e);
+            return DCAPError::VerifyFailed;})?;
+
+        // Verify the signature against the signing cert
+        sig_cert.verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &report.ra_report, &sig)
+            .map_err(|_| {error!("[EPID VERIFY ERROR]verify_signature fail ");
+                return DCAPError::VerifyFailed;})?;
+
+        Ok(())
     }
 
 }

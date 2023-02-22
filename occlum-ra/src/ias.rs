@@ -11,12 +11,17 @@ use webpki::DNSNameRef;
 use http_req::{request::RequestBuilder, tls, uri::Uri};
 use std::convert::TryFrom;
 use http_req::request::Method::{GET, POST};
-
+use serde::{Serialize, Deserialize};
 use crate::epid_occlum::EpidReport;
 
 pub const DEV_HOSTNAME: &'static str = "api.trustedservices.intel.com";
 pub const SIGRL_SUFFIX: &'static str = "/sgx/dev/attestation/v4/sigrl/";
 pub const REPORT_SUFFIX: &'static str = "/sgx/dev/attestation/v4/report";
+
+#[derive(Serialize,Deserialize ,Debug)]
+pub struct Data{
+    isvEnclaveQuote: String
+}
 
 pub struct Net {
     pub spid: sgx_spid_t,
@@ -38,19 +43,8 @@ impl Net {
 
     pub fn get_report(&self, fd: String, quote: Vec<u8>) -> Result<EpidReport, String> {
         let encoded_quote = base64::encode(&quote[..]);
-        let encoded_json = format!("{{\"isvEnclaveQuote\":\"{}\"}}\r\n", encoded_quote);
-
-        let request = format!("POST {} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key:{}\r\nContent-Length:{}\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}",
-                            REPORT_SUFFIX,
-                            DEV_HOSTNAME,
-                            self.ias_key,
-                            encoded_json.len(),
-                            encoded_json);
-
-        let resp = self.send(fd, request)?;
-
-        // parse http response
-        let (att_report, sig, sig_cert) = Self::parse_response_attn_report(&resp.as_bytes())?;
+        let (att_report, sig, sig_cert) = self.http_get_report(fd.clone(),REPORT_SUFFIX.to_string()
+                                        ,encoded_quote).unwrap();
 
         return Ok(EpidReport {
             ra_report: att_report.as_bytes().to_vec(),
@@ -90,47 +84,63 @@ impl Net {
         }
         return Ok(base64::decode(str::from_utf8(&writer).unwrap())
             .map_err(|_| "parse body failed".to_string())?);
-        //return Ok(writer);
     }
 
-    fn send(&self, fd: String, request: String) -> Result<String, String> {
-        let config = Self::make_ias_client_config();
-        let dns_name = webpki::DNSNameRef::try_from_ascii_str(DEV_HOSTNAME)
-            .map_err(|_| "unknown hostname".to_string())?;
-        let mut sess = rustls::ClientSession::new(&Arc::new(config), dns_name);
-        /*
-        use std::os::unix::io::FromRawFd;
-        let rawfd = std::os::unix::io::RawFd::from(fd);
-        let mut sock = unsafe { TcpStream::from_raw_fd(rawfd) };
-        */
-        let mut sock = TcpStream::connect(fd).unwrap();
-        println!("TcpStream::connect {:?}",sock);
+    fn http_get_report(&self, ias_url: String, suffix: String, encode_json: String) -> Result<(String, String, String), String>{
+        let url = format!("{ias_url}{suffix}");
+        println!("url {:?}",url);
+        let data = Data{
+            isvEnclaveQuote: encode_json
+        };
+        let encode_json = serde_json::to_string(&data).unwrap();
+        println!("encode_json {:?}",encode_json);
+        println!("len {}",encode_json.len());
 
-        let mut tls = rustls::Stream::new(&mut sess, &mut sock);
+        let addr: Uri = Uri::try_from(url.as_str())
+            .or_else(|_| Err("Error::Uri bad".to_string()))?;
 
-        let _result = tls.write(request.as_bytes());
-        println!("tls.write");
+        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
+            .or_else(|_| Err("Error::TcpStream connect fail".to_string()))?;
 
-        let mut plaintext = Vec::new();
-        match tls.read_to_end(&mut plaintext) {
-            Ok(_) => (),
-            Err(e) => return Err(e.to_string()),
-        }
-        println!("tls.read");
+        let mut stream = tls::Config::default()
+            .connect(addr.host().unwrap_or(""), stream)
+            .or_else(|_| Err("Error::TLS connect fail".to_string()))?;
 
-        let response = String::from_utf8(plaintext.clone())
-            .map_err(|_| "convert plaintext failed".to_string())?;
-        return Ok(response);
-    }
+        let mut writer = Vec::new();
 
-    fn make_ias_client_config() -> rustls::ClientConfig {
-        let mut config = rustls::ClientConfig::new();
+        let response = RequestBuilder::new(&addr)
+            .method(POST)
+            .header("Ocp-Apim-Subscription-Key",&self.ias_key)
+            .header("Content-Type","application/json")
+            .header("Content-Length",&encode_json.len())
+            .header("Connection", "Close")
+            .body(encode_json.as_bytes())
+            .send(&mut stream, &mut writer)
+            .or_else(|_| Err("Error::RequestBuilder send fail".to_string()))?;
 
-        config
-            .root_store
-            .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+        println!("Status: {} {}", response.status_code(), response.reason());
+        println!("report response: {:?}",response);
 
-        config
+        // parse the response
+        let content_len = response.headers().get("Content-Length").unwrap();
+        let body_len = content_len.parse::<u32>().map_err(|_| "parse len failed".to_string())?;
+        let sig = response.headers().get("X-IASReport-Signature").unwrap().to_owned();
+        let mut cert = response.headers().get("X-IASReport-Signing-Certificate").unwrap().to_owned();
+
+        // Remove %0A from cert, and only obtain the signing cert
+        cert = cert.replace("%0A", "");
+        cert = Self::percent_decode(cert);
+        let v: Vec<&str> = cert.split("-----").collect();
+        println!("sig_cert amount: {:?}",v.len());
+        let sig_cert = v[2].to_string();
+
+        let mut attn_report = "".to_string();
+        if body_len != 0 {
+            attn_report = str::from_utf8(&writer).unwrap().to_string();
+            println!("IasAttestation report: {}", attn_report);
+        };
+
+        return Ok((attn_report, sig, sig_cert));
     }
 
     fn parse_response_attn_report(resp: &[u8]) -> Result<(String, String, String), String> {
@@ -207,6 +217,16 @@ impl Net {
 
         // len_num == 0
         Ok((attn_report, sig, sig_cert))
+    }
+
+    fn make_ias_client_config() -> rustls::ClientConfig {
+        let mut config = rustls::ClientConfig::new();
+
+        config
+            .root_store
+            .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+
+        config
     }
 
     fn percent_decode(orig: String) -> String {

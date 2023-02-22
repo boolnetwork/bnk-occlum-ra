@@ -111,6 +111,7 @@ impl EpidQuote {
         let mut quote_buf: [u8; RET_QUOTE_BUF_LEN as usize] = [0; RET_QUOTE_BUF_LEN as usize];
         let mut quote_len: u32 = 0;
 
+        println!("sigrl len {:?}",sigrl.len());
         let mut args = IoctlGenEPIDQuoteArg{
             report_data,
             quote_type,
@@ -149,4 +150,16 @@ impl EpidQuote {
         }
     }
 
+    pub fn new_buf(quote_raw_buf: &[u8]) -> Result<Vec<u8>,String> {
+        if quote_raw_buf.len() < std::mem::size_of::<sgx_quote_t>() {
+            return Err("sgx_quote_t too small".to_string());
+        }
+        let quote: sgx_quote_t = unsafe { *(quote_raw_buf.as_ptr() as *const sgx_quote_t) };
+        let quote_size = std::mem::size_of::<sgx_quote_t>() + quote.signature_len as usize;
+        if quote_size > quote_raw_buf.len() {
+            return Err("buffer is too small for SGX quote with signature".to_string());
+        }
+        let quote_buf = quote_raw_buf[..quote_size].to_vec();
+        Ok(quote_buf)
+    }
 }

@@ -65,14 +65,10 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
 
     println!("report.svn {:?}", report.body.cpu_svn.svn);
 
-    let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
-    let mut os_rng = rand::thread_rng();
-    os_rng.fill_bytes(&mut quote_nonce.rand);
-
     let quote_buff = epid.get_epid_quote(sigrl, net.spid, report_data,sign_type);
 
+    let quote_buff = occlum::EpidQuote::new_buf(&quote_buff).unwrap();
     println!("quote_buff len {:?}", quote_buff.len());
     let report = net.get_report(ias_url, quote_buff)?;
-    println!("report {:?}", report);
     Ok(report)
 }
