@@ -182,3 +182,22 @@ impl DcapAttestation {
         Ok(enclave_field)
     }
 }
+
+use crate::epid_occlum::EpidReport;
+
+#[derive(Default)]
+pub struct IasAttestation {}
+
+impl IasAttestation {
+    #[cfg(not(feature = "no_std"))]
+    pub fn create_report(addition: &[u8]) -> Result<EpidReport, String> {
+        let re = crate::epid_occlum::generate_epid_quote(addition)?;
+        Ok(re)
+    }
+
+    pub fn verify(report: &AttestationReport, now: u64) -> Result<EnclaveFields, String> {
+
+        Ok(EnclaveFields::default())
+    }
+
+}

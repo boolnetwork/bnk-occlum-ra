@@ -157,13 +157,13 @@ impl fmt::Display for QlEcdsaSig {
         )?;
         write!(
             f,
-            "\t qe3_report: {}",
-            ReportBody::new(self.inner.qe3_report)
+            "\t qe_report: {}",
+            ReportBody::new(self.inner.qe_report)
         )?;
         write!(
             f,
-            "\t qe3_report_sig: {:02x}",
-            self.inner.qe3_report_sig.iter().format("")
+            "\t qe_report_sig: {:02x}",
+            self.inner.qe_report_sig.iter().format("")
         )
     }
 }
@@ -278,7 +278,7 @@ impl DcapAttestationReport {
     pub fn is_valid_attestation_public_key(&self) -> bool {
         let result = sha256_combine_slice(&self.ecdsa_sig.inner.attest_pub_key, &self.auth_data);
         // The first 32 bytes are public keys
-        result == self.ecdsa_sig.inner.qe3_report.report_data.d[..32]
+        result == self.ecdsa_sig.inner.qe_report.report_data.d[..32]
     }
 
     pub fn is_valid_quote(&self, pck_pk: [u8; 65]) -> bool {
@@ -299,17 +299,17 @@ impl DcapAttestationReport {
         );
 
         // verify qe signature
-        let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report);
+        let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report);
         let report = unsafe { brw.read_unaligned() };
 
-        //let report = aa.qe3_report.clone();
+        //let report = aa.qe_report.clone();
         let qe_data = unsafe {
             slice::from_raw_parts(
-                (&report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
+                (&report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report)
                 SGX_QUOTE_REPORT_BODY_LEN,
             )
         };
-        let qe_sig = self.ecdsa_sig.inner.qe3_report_sig;
+        let qe_sig = self.ecdsa_sig.inner.qe_report_sig;
         let qe_ret = ring::signature::ECDSA_P256_SHA256_FIXED.verify(
             pck_pk.as_ref().into(),
             qe_data.as_ref().into(),

@@ -126,7 +126,9 @@ impl EpidQuote {
         if ret < 0 {
             panic!("IOCTRL IOCTL_GEN_EPID_QUOTE failed");
         } else {
-            quote_buf.to_vec()
+            let mut quote = quote_buf.to_vec();
+            quote.truncate(quote_len as usize);
+            quote
         }
     }
 

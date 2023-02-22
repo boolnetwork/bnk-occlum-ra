@@ -1,3 +1,7 @@
+use occlum::{sgx_quote_nonce_t, sgx_quote_sign_type_t, sgx_report_data_t};
+use crate::ias::Net;
+use rand::*;
+
 const SEPARATOR: u8 = 0x7Cu8;
 
 pub struct EpidReport {
@@ -30,4 +34,34 @@ pub fn from_payload(payload: &[u8]) -> Result<Self, String> {
         cert_raw: sig_cert_raw.to_vec(),
     })
 }
+}
+
+
+pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
+    let spid: String = "B6E792288644E2957A40AF226F5E4DD8".to_string();
+    let ias_key: String = "22aa549a2d5e47a2933a753c1cae947c".to_string();
+    let sign_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
+    let ias_url = "https://api.trustedservices.intel.com/sgx/dev".to_string();
+
+    let mut epid = occlum::EpidQuote::new();
+    let eg = epid.get_group_id();
+    let mut ti = epid.get_target_info();
+
+    let gid: u32 = u32::from_le_bytes(eg);
+    let net = Net::new(spid, ias_key);
+
+    let sigrl: Vec<u8> = net.get_sigrl(ias_url.clone(), gid)?;
+
+    let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
+    report_data.d[..addition.len()].clone_from_slice(addition);
+
+    let report = epid.get_epid_report(&mut ti, &mut report_data);
+
+    let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
+    let mut os_rng = rand::thread_rng();
+    os_rng.fill_bytes(&mut quote_nonce.rand);
+
+    let quote_buff = epid.get_epid_quote(sigrl, net.spid, report_data,sign_type);
+    let report = net.get_report(ias_url, quote_buff)?;
+    Ok(report)
 }
