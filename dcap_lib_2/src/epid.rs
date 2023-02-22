@@ -118,7 +118,7 @@ impl EpidQuote {
             nonce: quote_nonce,
             sigrl_ptr: sigrl.as_ptr() as * const u8,
             sigrl_len: sigrl.len() as u32,
-            quote_buf_len: quote_len,
+            quote_buf_len: RET_QUOTE_BUF_LEN,
             quote_buf: quote_buf.as_mut_ptr() as * mut u8,
         };
 
@@ -126,9 +126,7 @@ impl EpidQuote {
         if ret < 0 {
             panic!("IOCTRL IOCTL_GEN_EPID_QUOTE failed");
         } else {
-            let mut quote = quote_buf.to_vec();
-            quote.truncate(quote_len as usize);
-            quote
+            quote_buf.to_vec()
         }
     }
 

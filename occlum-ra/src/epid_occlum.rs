@@ -42,7 +42,7 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
     let spid: String = "B6E792288644E2957A40AF226F5E4DD8".to_string();
     let ias_key: String = "22aa549a2d5e47a2933a753c1cae947c".to_string();
     let sign_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
-    let ias_url = "https://api.trustedservices.intel.com/sgx/dev".to_string();
+    let ias_url = "https://api.trustedservices.intel.com".to_string();
 
     let mut epid = occlum::EpidQuote::new();
     let eg = epid.get_group_id();
@@ -51,6 +51,11 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
     let gid: u32 = u32::from_le_bytes(eg);
     let net = Net::new(spid, ias_key);
 
+    println!(
+        "epid group_id{:?} target_info.mr.m{:?}",
+        eg, ti.mr_enclave.m
+    );
+
     let sigrl: Vec<u8> = net.get_sigrl(ias_url.clone(), gid)?;
 
     let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
@@ -58,17 +63,15 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
 
     let report = epid.get_epid_report(&mut ti, &mut report_data);
 
-    println!(
-        "epid group_id{:?} target_info.mr.m{:?} report.svn {:?}",
-        eg, ti.mr_enclave.m, report.body.cpu_svn.svn
-    );
+    println!("report.svn {:?}", report.body.cpu_svn.svn);
 
     let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
     let mut os_rng = rand::thread_rng();
     os_rng.fill_bytes(&mut quote_nonce.rand);
 
     let quote_buff = epid.get_epid_quote(sigrl, net.spid, report_data,sign_type);
-    println!("report buff len {:?}", quote_buff.len());
+
+    println!("quote_buff len {:?}", quote_buff.len());
     let report = net.get_report(ias_url, quote_buff)?;
     println!("report {:?}", report);
     Ok(report)

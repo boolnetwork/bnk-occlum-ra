@@ -8,6 +8,9 @@ use std::str;
 use std::sync::Arc;
 use sha2::Digest;
 use webpki::DNSNameRef;
+use http_req::{request::RequestBuilder, tls, uri::Uri};
+use std::convert::TryFrom;
+use http_req::request::Method::{GET, POST};
 
 use crate::epid_occlum::EpidReport;
 
@@ -29,15 +32,8 @@ impl Net {
     }
 
     pub fn get_sigrl(&self, fd: String, gid: u32) -> Result<Vec<u8>, String> {
-        let request = format!(
-            "GET {}{:08x} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\n\r\n",
-            SIGRL_SUFFIX, gid, DEV_HOSTNAME, self.ias_key
-        );
-
-        let resp = self.send(fd, request)?;
-
-        // parse http response
-        return Ok(Self::parse_response_sigrl(&resp.as_bytes())?);
+        let resp = self.http_get_sigrl(fd.clone(), SIGRL_SUFFIX.to_string(), gid)?;
+        return Ok(resp);
     }
 
     pub fn get_report(&self, fd: String, quote: Vec<u8>) -> Result<EpidReport, String> {
@@ -63,6 +59,40 @@ impl Net {
         });
     }
 
+    fn http_get_sigrl(&self, ias_url: String, suffix: String, gid: u32) -> Result<Vec<u8>,String>{
+        let url = format!("{ias_url}{suffix}{gid:08x}");
+        println!("url {:?}",url);
+
+        let addr: Uri = Uri::try_from(url.as_str())
+            .or_else(|_| Err("Error::Uri bad".to_string()))?;
+
+        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
+            .or_else(|_| Err("Error::TcpStream connect fail".to_string()))?;
+
+        let mut stream = tls::Config::default()
+            .connect(addr.host().unwrap_or(""), stream)
+            .or_else(|_| Err("Error::TLS connect fail".to_string()))?;
+
+        let mut writer = Vec::new();
+
+        let response = RequestBuilder::new(&addr)
+            .method(GET)
+            .header("Ocp-Apim-Subscription-Key",&self.ias_key)
+            .header("Connection", "Close")
+            .send(&mut stream, &mut writer)
+            .or_else(|_| Err("Error::RequestBuilder send fail".to_string()))?;
+
+        println!("Status: {} {}", response.status_code(), response.reason());
+
+        let body_len = response.headers().get("Content-Length").unwrap();
+        if body_len == "0"{
+            return Ok(Vec::new());
+        }
+        return Ok(base64::decode(str::from_utf8(&writer).unwrap())
+            .map_err(|_| "parse body failed".to_string())?);
+        //return Ok(writer);
+    }
+
     fn send(&self, fd: String, request: String) -> Result<String, String> {
         let config = Self::make_ias_client_config();
         let dns_name = webpki::DNSNameRef::try_from_ascii_str(DEV_HOSTNAME)
@@ -74,14 +104,20 @@ impl Net {
         let mut sock = unsafe { TcpStream::from_raw_fd(rawfd) };
         */
         let mut sock = TcpStream::connect(fd).unwrap();
+        println!("TcpStream::connect {:?}",sock);
+
         let mut tls = rustls::Stream::new(&mut sess, &mut sock);
 
         let _result = tls.write(request.as_bytes());
+        println!("tls.write");
+
         let mut plaintext = Vec::new();
         match tls.read_to_end(&mut plaintext) {
             Ok(_) => (),
             Err(e) => return Err(e.to_string()),
         }
+        println!("tls.read");
+
         let response = String::from_utf8(plaintext.clone())
             .map_err(|_| "convert plaintext failed".to_string())?;
         return Ok(response);
