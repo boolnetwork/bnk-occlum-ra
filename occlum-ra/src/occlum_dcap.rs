@@ -2,7 +2,7 @@ use occlum_dcap::*;
 use std::convert::TryFrom;
 use std::io::Result;
 
-pub struct DcapDemo {
+pub struct Dcap {
     dcap_quote: DcapQuote,
     quote_size: u32,
     quote_buf: Vec<u8>,
@@ -11,7 +11,7 @@ pub struct DcapDemo {
     suppl_buf: Vec<u8>,
 }
 
-impl DcapDemo {
+impl Dcap {
     pub fn new(report_data: Vec<u8>) -> Self {
         let mut dcap = DcapQuote::new();
         let quote_size = dcap.get_quote_size();
@@ -127,7 +127,7 @@ impl DcapDemo {
 }
 
 #[cfg(not(feature = "no_std"))]
-impl Drop for DcapDemo {
+impl Drop for Dcap {
     fn drop(&mut self) {
         self.dcap_quote.close();
     }
@@ -135,13 +135,13 @@ impl Drop for DcapDemo {
 
 #[cfg(not(feature = "no_std"))]
 pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
-    let mut dcap_demo = DcapDemo::new(report_str.clone());
+    let mut dcap_sgx = Dcap::new(report_str.clone());
 
     println!("Generate quote with report data : {:?}", report_str);
-    dcap_demo.dcap_quote_gen().unwrap();
+    dcap_sgx.dcap_quote_gen().unwrap();
 
     // compare the report data in quote buffer
-    let report_data_ptr = dcap_demo.dcap_quote_get_report_data().unwrap();
+    let report_data_ptr = dcap_sgx.dcap_quote_get_report_data().unwrap();
     let string = unsafe { (*report_data_ptr).d.to_vec() };
 
     if report_str == string[..report_str.len()] {
@@ -150,17 +150,9 @@ pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
         println!("Report data from Quote: '{:?}' doesn't match !!!", string);
     }
 
-    // let string = str::from_utf8( unsafe { &(*report_data_ptr).d } ).unwrap();
-    //
-    // if report_str == &string[..report_str.len()] {
-    //     println!("Report data from Quote: '{}' exactly matches.", string);
-    // } else {
-    //     println!("Report data from Quote: '{}' doesn't match !!!", string);
-    // }
+    dcap_sgx.dcap_dump_quote_info();
 
-    dcap_demo.dcap_dump_quote_info();
-
-    let result = dcap_demo.dcap_quote_ver().unwrap();
+    let result = dcap_sgx.dcap_quote_ver().unwrap();
     match result {
         sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OK => {
             println!("Succeed to verify the quote!");
@@ -181,5 +173,5 @@ pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
         ),
     }
 
-    dcap_demo.quote_buf.clone()
+    dcap_sgx.quote_buf.clone()
 }

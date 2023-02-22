@@ -58,10 +58,10 @@ pub fn verify_dcap_report(report: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), String>
 #[cfg(not(feature = "no_std"))]
 pub fn get_fingerprint() -> Vec<u8> {
     let report_str = "GET KEY";
-    let mut dcap_demo = occlum_dcap::DcapDemo::new(report_str.as_bytes().to_vec());
+    let mut dcap_sgx = occlum_dcap::Dcap::new(report_str.as_bytes().to_vec());
     println!("Generate quote with report data : {:?}", report_str);
-    dcap_demo.dcap_quote_gen().unwrap();
-    let report = dcap_demo.dcap_quote_get_report_body().unwrap();
+    dcap_sgx.dcap_quote_gen().unwrap();
+    let report = dcap_sgx.dcap_quote_get_report_body().unwrap();
 
     occlum::get_key(report).to_vec()
 }
