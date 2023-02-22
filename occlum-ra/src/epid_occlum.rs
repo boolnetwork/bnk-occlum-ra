@@ -4,6 +4,7 @@ use rand::*;
 
 const SEPARATOR: u8 = 0x7Cu8;
 
+#[derive(Debug)]
 pub struct EpidReport {
     pub ra_report: Vec<u8>,
     pub signature: Vec<u8>,
@@ -57,11 +58,18 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
 
     let report = epid.get_epid_report(&mut ti, &mut report_data);
 
+    println!(
+        "epid group_id{:?} target_info.mr.m{:?} report.svn {:?}",
+        eg, ti.mr_enclave.m, report.body.cpu_svn.svn
+    );
+
     let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
     let mut os_rng = rand::thread_rng();
     os_rng.fill_bytes(&mut quote_nonce.rand);
 
     let quote_buff = epid.get_epid_quote(sigrl, net.spid, report_data,sign_type);
+    println!("report buff len {:?}", quote_buff.len());
     let report = net.get_report(ias_url, quote_buff)?;
+    println!("report {:?}", report);
     Ok(report)
 }

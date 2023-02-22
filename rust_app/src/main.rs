@@ -2,6 +2,7 @@ use occlum_ra;
 
 use occlum_ra::{generate_cert_key, generate_epid, verify_cert};
 use std::time::{SystemTime, UNIX_EPOCH};
+use occlum_ra::attestation::IasAttestation;
 
 fn main() {
     println!("start");
@@ -14,5 +15,6 @@ fn main() {
 
     println!("verify_cert result {:?}", res);
 
+    IasAttestation::create_report("asd".as_bytes());
     generate_epid();
 }
