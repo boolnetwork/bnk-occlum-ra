@@ -9,7 +9,7 @@ use std::sync::Arc;
 use sha2::Digest;
 use webpki::DNSNameRef;
 use http_req::{request::RequestBuilder, tls, uri::Uri};
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 use http_req::request::Method::{GET, POST};
 use serde::{Serialize, Deserialize};
 use crate::epid_occlum::EpidReport;

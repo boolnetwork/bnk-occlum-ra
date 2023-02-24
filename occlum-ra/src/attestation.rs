@@ -1,19 +1,25 @@
 use crate::dcap::DCAPError;
 use crate::dcap::DcapAttestationReport;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use crate::occlum_dcap::generate_quote;
 use core::fmt;
 use itertools::Itertools;
 use log::error;
 use serde::{self, Deserialize, Serialize};
-use std::convert::TryFrom;
-use std::convert::TryInto;
+use core::convert::TryFrom;
+use core::convert::TryInto;
+#[cfg(feature = "std")]
 use occlum_dcap::sgx_quote_t;
 use crate::dcap::SUPPORTED_SIG_ALGS;
-// use crate::types::{
-//     AttestationReport, AttestationStyle, DcapReport, EnclaveFields, EpidReport, ReportData,
-// };
-
+use crate::epid_occlum::EpidReport;
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+#[cfg(not(feature = "std"))]
+use alloc::vec;
 #[derive(Default, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReportData {
@@ -187,7 +193,7 @@ DaVzWh5aiEx+idkSGMnX
 pub struct DcapAttestation;
 
 impl DcapAttestation {
-    #[cfg(not(feature = "no_std"))]
+    #[cfg(feature = "std")]
     pub fn create_report(addition: &[u8]) -> Result<DcapReport, DCAPError> {
         let quote = generate_quote(addition.to_vec());
         Ok(DcapReport { quote })
@@ -238,18 +244,17 @@ impl DcapAttestation {
     }
 }
 
-use crate::epid_occlum::EpidReport;
-
 #[derive(Default)]
 pub struct IasAttestation {}
 
 impl IasAttestation {
-    #[cfg(not(feature = "no_std"))]
+    #[cfg(feature = "std")]
     pub fn create_report(addition: &[u8]) -> Result<EpidReport, String> {
         let re = crate::epid_occlum::generate_epid_quote(addition)?;
         Ok(re)
     }
 
+    #[cfg(feature = "std")]
     pub fn verify(report: &AttestationReport, now: u64) -> Result<EnclaveFields, DCAPError> {
         assert!(report.style == AttestationStyle::EPID);
 
@@ -286,7 +291,7 @@ impl IasAttestation {
             return Err(DCAPError::VerifyFailed);
         }
 
-        let sgx_quote: sgx_quote_t = unsafe { std::ptr::read(quote.as_ptr() as *const _) };
+        let sgx_quote: sgx_quote_t = unsafe { core::ptr::read(quote.as_ptr() as *const _) };
 
         let mut enclave_field = EnclaveFields::default();
         enclave_field.version = sgx_quote.version;
@@ -322,7 +327,7 @@ impl IasAttestation {
         let sig_cert = webpki::EndEntityCert::from(sig_cert_dec.as_ref())
             .map_err(|_| {error!("[EPID VERIFY ERROR]sig_cert from EndEntityCert ");
                 return DCAPError::VerifyFailed;})?;
-        println!("sig_cert_dec {:?}",sig_cert_dec);
+        log::debug!("sig_cert_dec {:?}",sig_cert_dec);
         let chain: Vec<&[u8]> = vec![];
 
         // let mut ias_ca_stripped = IAS_REPORT_CA.as_bytes().to_vec();

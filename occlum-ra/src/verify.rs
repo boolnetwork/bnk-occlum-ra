@@ -1,11 +1,18 @@
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
 use crate::attestation::{AttestationReport, AttestationStyle, DcapAttestation, EnclaveFields};
+#[cfg(not(feature = "std"))]
+use alloc::format;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 
 pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<(Vec<u8>, Vec<u8>), String> {
     // Before we reach here, Webpki already verifed the cert is properly signed
     let report = match AttestationReport::from_payload(report_vec) {
         Ok(r) => r,
         Err(e) => {
-            println!("Compatible with older payload: {:?}", e);
             AttestationReport {
                 style: AttestationStyle::EPID,
                 data: report_vec.to_vec(),
@@ -27,7 +34,6 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
     let report = match AttestationReport::from_payload(&payload) {
         Ok(r) => r,
         Err(e) => {
-            println!("Compatible with older payload: {:?}", e);
             AttestationReport {
                 style: AttestationStyle::EPID,
                 data: payload,

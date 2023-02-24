@@ -5,7 +5,18 @@ use ring::signature::VerificationAlgorithm;
 use sgx_types::*;
 use sha2::Digest;
 use sha2::Sha256;
-use std::convert::TryFrom;
+use core::convert::TryFrom;
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
+#[cfg(not(feature = "std"))]
+use alloc::format;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::vec;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
 pub(crate) fn sha256_combine_slice(pk: &[u8], auth_data: &[u8]) -> [u8; 32] {
     let mut pk_ad = vec![];
     pk_ad.extend_from_slice(pk);
@@ -299,13 +310,24 @@ impl DcapAttestationReport {
         );
 
         // verify qe signature
-        let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report);
-        let report = unsafe { brw.read_unaligned() };
-
-        //let report = aa.qe_report.clone();
-        let qe_data = unsafe {
+        // verify qe signature
+        #[cfg(feature = "std")]
+            let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report);
+        #[cfg(feature = "std")]
+            let report = unsafe { brw.read_unaligned() };
+        #[cfg(feature = "std")]
+            let qe_data = unsafe {
             slice::from_raw_parts(
-                (&report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report)
+                (&report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
+                SGX_QUOTE_REPORT_BODY_LEN,
+            )
+        };
+
+        // verify qe signature
+        #[cfg(not(feature = "std"))]
+            let qe_data = unsafe {
+            slice::from_raw_parts(
+                (&self.ecdsa_sig.inner.qe_report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
                 SGX_QUOTE_REPORT_BODY_LEN,
             )
         };

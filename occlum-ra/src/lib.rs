@@ -1,33 +1,47 @@
-extern crate core;
+#![cfg_attr(not(feature = "std"), no_std)]
+#![allow(dead_code)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(unaligned_references)]
+#![allow(clippy::char_lit_as_u8)]
+#![allow(unused_imports)]
+
 pub mod attestation;
 pub mod dcap;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub mod occlum_dcap;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub mod ias;
-#[cfg(not(feature = "no_std"))]
 pub mod epid_occlum;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub mod tls;
 pub mod verify;
 
 use attestation::{DcapAttestation, EnclaveFields};
+#[cfg(feature = "std")]
 use std::time::{SystemTime, UNIX_EPOCH};
 pub use verify::{verify, verify_only_report};
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 extern crate occlum_dcap as occlum;
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 use occlum::sgx_report_data_t;
 
+#[cfg(any(test, feature = "std"))]
+#[macro_use]
+extern crate std;
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+extern crate core;
+
 /// return (key_der,cert_der)
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub fn generate_cert_key() -> Result<(Vec<u8>, Vec<u8>), String> {
-    println!("start generate_cert_key");
     tls::generate_cert("".to_string())
 }
 
 /// verify cert_der
+#[cfg(feature = "std")]
 pub fn verify_cert(cert: &[u8]) -> Result<EnclaveFields, String> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -37,7 +51,7 @@ pub fn verify_cert(cert: &[u8]) -> Result<EnclaveFields, String> {
 }
 
 /// create dcap report with additional info
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub fn create_dcap_report(additional_info: Vec<u8>) -> Result<Vec<u8>, String> {
     let report = match DcapAttestation::create_report(&additional_info) {
         Ok(r) => r,
@@ -47,6 +61,7 @@ pub fn create_dcap_report(additional_info: Vec<u8>) -> Result<Vec<u8>, String> {
 }
 
 /// verify dcap report with additional info and return (mr_enclave.m,report_data.d)
+#[cfg(feature = "std")]
 pub fn verify_dcap_report(report: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), String> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -55,7 +70,7 @@ pub fn verify_dcap_report(report: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), String>
     verify_only_report(&report, now)
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub fn get_fingerprint() -> Vec<u8> {
     let report_str = "GET KEY";
     let mut dcap_sgx = occlum_dcap::Dcap::new(report_str.as_bytes().to_vec());
@@ -66,7 +81,7 @@ pub fn get_fingerprint() -> Vec<u8> {
     occlum::get_key(report).to_vec()
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub fn generate_epid() -> Result<(), String> {
     println!("start epid");
     let mut epid = occlum::EpidQuote::new();

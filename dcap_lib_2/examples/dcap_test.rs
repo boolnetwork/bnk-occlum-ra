@@ -1,7 +1,7 @@
 extern crate occlum_dcap;
 use std::str;
 use std::io::Result;
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 use occlum_dcap::*;
 
 struct DcapDemo {

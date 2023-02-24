@@ -1,5 +1,5 @@
 use occlum_dcap::*;
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 use std::io::Result;
 
 pub struct Dcap {
@@ -126,14 +126,14 @@ impl Dcap {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 impl Drop for Dcap {
     fn drop(&mut self) {
         self.dcap_quote.close();
     }
 }
 
-#[cfg(not(feature = "no_std"))]
+#[cfg(feature = "std")]
 pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
     let mut dcap_sgx = Dcap::new(report_str.clone());
 

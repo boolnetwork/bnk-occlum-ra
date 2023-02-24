@@ -1,7 +1,14 @@
+#[cfg(feature = "std")]
 use occlum::{sgx_quote_nonce_t, sgx_quote_sign_type_t, sgx_report_data_t};
+#[cfg(feature = "std")]
 use crate::ias::Net;
 use rand::*;
-
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
 const SEPARATOR: u8 = 0x7Cu8;
 
 #[derive(Debug)]
@@ -37,7 +44,7 @@ pub fn from_payload(payload: &[u8]) -> Result<Self, String> {
 }
 }
 
-
+#[cfg(feature = "std")]
 pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
     let spid: String = "B6E792288644E2957A40AF226F5E4DD8".to_string();
     let ias_key: String = "22aa549a2d5e47a2933a753c1cae947c".to_string();
