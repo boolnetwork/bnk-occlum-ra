@@ -4,6 +4,7 @@
 #![allow(unaligned_references)]
 #![allow(clippy::char_lit_as_u8)]
 #![allow(unused_imports)]
+#![allow(clippy::or_fun_call)]
 
 pub mod attestation;
 pub mod dcap;
@@ -86,16 +87,16 @@ pub fn generate_epid() -> Result<(), String> {
     println!("start epid");
     let mut epid = occlum::EpidQuote::new();
     let group_id = epid.get_group_id();
-    let mut target_info = epid.get_target_info();
+    let target_info = epid.get_target_info();
 
     println!(
         "epid group_id{:?} target_info.mr.m{:?}",
         group_id, target_info.mr_enclave.m
     );
 
-    let mut report_data = sgx_report_data_t::default();
-    report_data.d = [7u8; 64];
-    let epid_report = epid.get_epid_report(&mut target_info, &mut report_data);
+    let report_data = sgx_report_data_t::default();
+    //report_data.d = [7u8; 64];
+    let epid_report = epid.get_epid_report(&target_info, &report_data);
     println!("epid epid_report.cpu.svn{:?}", epid_report.body.cpu_svn.svn);
 
     Ok(())

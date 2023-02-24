@@ -14,7 +14,7 @@ pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<(Vec<u8>, Vec<u
     // Before we reach here, Webpki already verifed the cert is properly signed
     let report = match AttestationReport::from_payload(report_vec) {
         Ok(r) => r,
-        Err(e) => AttestationReport {
+        Err(_e) => AttestationReport {
             style: AttestationStyle::EPID,
             data: report_vec.to_vec(),
         },
@@ -22,18 +22,18 @@ pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<(Vec<u8>, Vec<u
 
     let enclave = match report.style {
         AttestationStyle::EPID => {
-            let enclave = match IasAttestation::verify(&report, now) {
+            
+            match IasAttestation::verify(&report, now) {
                 Err(_e) => return Err("IasAttestation::verify err".to_string()),
                 Ok(enclave) => enclave,
-            };
-            enclave
+            }
         }
         AttestationStyle::DCAP => {
-            let enclave = match DcapAttestation::verify(&report, now) {
+            
+            match DcapAttestation::verify(&report, now) {
                 Err(_e) => return Err("DcapAttestation::verify err".to_string()),
                 Ok(enclave) => enclave,
-            };
-            enclave
+            }
         }
     };
 
@@ -45,7 +45,7 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
     let (payload, pub_k) = extract_data(cert)?;
     let report = match AttestationReport::from_payload(&payload) {
         Ok(r) => r,
-        Err(e) => AttestationReport {
+        Err(_e) => AttestationReport {
             style: AttestationStyle::EPID,
             data: payload,
         },
@@ -53,18 +53,18 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
 
     let enclave = match report.style {
         AttestationStyle::EPID => {
-            let enclave = match IasAttestation::verify(&report, now) {
+            
+            match IasAttestation::verify(&report, now) {
                 Err(_e) => return Err("IasAttestation::verify err".to_string()),
                 Ok(enclave) => enclave,
-            };
-            enclave
+            }
         }
         AttestationStyle::DCAP => {
-            let enclave = match DcapAttestation::verify(&report, now) {
+            
+            match DcapAttestation::verify(&report, now) {
                 Err(_e) => return Err("DcapAttestation::verify err".to_string()),
                 Ok(enclave) => enclave,
-            };
-            enclave
+            }
         }
     };
 

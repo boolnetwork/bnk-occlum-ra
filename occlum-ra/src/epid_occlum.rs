@@ -53,7 +53,7 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String> {
 
     let mut epid = occlum::EpidQuote::new();
     let eg = epid.get_group_id();
-    let mut ti = epid.get_target_info();
+    let ti = epid.get_target_info();
 
     let gid: u32 = u32::from_le_bytes(eg);
     let net = Net::new(spid, ias_key);
@@ -68,7 +68,7 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String> {
     let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
     report_data.d[..addition.len()].clone_from_slice(addition);
 
-    let report = epid.get_epid_report(&mut ti, &mut report_data);
+    let report = epid.get_epid_report(&ti, &report_data);
 
     println!("report.svn {:?}", report.body.cpu_svn.svn);
 

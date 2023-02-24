@@ -321,6 +321,7 @@ dependencies = [
 [[package]]
 name = "occlum_dcap"
 version = "0.1.0"
+source = "git+https://github.com/ABMatrix/occlum#f705a9d8f581f0e7a88a8d696abfd3dcd2563758"
 dependencies = [
  "cfg-if",
  "libc",

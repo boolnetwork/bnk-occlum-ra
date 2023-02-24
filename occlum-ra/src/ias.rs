@@ -14,9 +14,9 @@ use std::str;
 use std::sync::Arc;
 use webpki::DNSNameRef;
 
-pub const DEV_HOSTNAME: &'static str = "api.trustedservices.intel.com";
-pub const SIGRL_SUFFIX: &'static str = "/sgx/dev/attestation/v4/sigrl/";
-pub const REPORT_SUFFIX: &'static str = "/sgx/dev/attestation/v4/report";
+pub const DEV_HOSTNAME: &str = "api.trustedservices.intel.com";
+pub const SIGRL_SUFFIX: &str = "/sgx/dev/attestation/v4/sigrl/";
+pub const REPORT_SUFFIX: &str = "/sgx/dev/attestation/v4/report";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Data {
@@ -37,14 +37,14 @@ impl Net {
     }
 
     pub fn get_sigrl(&self, fd: String, gid: u32) -> Result<Vec<u8>, String> {
-        let resp = self.http_get_sigrl(fd.clone(), SIGRL_SUFFIX.to_string(), gid)?;
-        return Ok(resp);
+        let resp = self.http_get_sigrl(fd, SIGRL_SUFFIX.to_string(), gid)?;
+        Ok(resp)
     }
 
     pub fn get_report(&self, fd: String, quote: Vec<u8>) -> Result<EpidReport, String> {
         let encoded_quote = base64::encode(&quote[..]);
         let (att_report, sig, sig_cert) = self
-            .http_get_report(fd.clone(), REPORT_SUFFIX.to_string(), encoded_quote)
+            .http_get_report(fd, REPORT_SUFFIX.to_string(), encoded_quote)
             .unwrap();
 
         return Ok(EpidReport {
@@ -59,14 +59,12 @@ impl Net {
         println!("url {:?}", url);
 
         let addr: Uri =
-            Uri::try_from(url.as_str()).or_else(|_| Err("Error::Uri bad".to_string()))?;
+            Uri::try_from(url.as_str()).map_err(|_| "Error::Uri bad".to_string())?;
 
-        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
-            .or_else(|_| Err("Error::TcpStream connect fail".to_string()))?;
+        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port())).map_err(|_| "Error::TcpStream connect fail".to_string())?;
 
         let mut stream = tls::Config::default()
-            .connect(addr.host().unwrap_or(""), stream)
-            .or_else(|_| Err("Error::TLS connect fail".to_string()))?;
+            .connect(addr.host().unwrap_or(""), stream).map_err(|_| "Error::TLS connect fail".to_string())?;
 
         let mut writer = Vec::new();
 
@@ -74,8 +72,7 @@ impl Net {
             .method(GET)
             .header("Ocp-Apim-Subscription-Key", &self.ias_key)
             .header("Connection", "Close")
-            .send(&mut stream, &mut writer)
-            .or_else(|_| Err("Error::RequestBuilder send fail".to_string()))?;
+            .send(&mut stream, &mut writer).map_err(|_| "Error::RequestBuilder send fail".to_string())?;
 
         println!("Status: {} {}", response.status_code(), response.reason());
 
@@ -83,8 +80,8 @@ impl Net {
         if body_len == "0" {
             return Ok(Vec::new());
         }
-        return Ok(base64::decode(str::from_utf8(&writer).unwrap())
-            .map_err(|_| "parse body failed".to_string())?);
+        return base64::decode(str::from_utf8(&writer).unwrap())
+            .map_err(|_| "parse body failed".to_string());
     }
 
     fn http_get_report(
@@ -103,14 +100,12 @@ impl Net {
         println!("len {}", encode_json.len());
 
         let addr: Uri =
-            Uri::try_from(url.as_str()).or_else(|_| Err("Error::Uri bad".to_string()))?;
+            Uri::try_from(url.as_str()).map_err(|_| "Error::Uri bad".to_string())?;
 
-        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
-            .or_else(|_| Err("Error::TcpStream connect fail".to_string()))?;
+        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port())).map_err(|_| "Error::TcpStream connect fail".to_string())?;
 
         let mut stream = tls::Config::default()
-            .connect(addr.host().unwrap_or(""), stream)
-            .or_else(|_| Err("Error::TLS connect fail".to_string()))?;
+            .connect(addr.host().unwrap_or(""), stream).map_err(|_| "Error::TLS connect fail".to_string())?;
 
         let mut writer = Vec::new();
 
@@ -121,8 +116,7 @@ impl Net {
             .header("Content-Length", &encode_json.len())
             .header("Connection", "Close")
             .body(encode_json.as_bytes())
-            .send(&mut stream, &mut writer)
-            .or_else(|_| Err("Error::RequestBuilder send fail".to_string()))?;
+            .send(&mut stream, &mut writer).map_err(|_| "Error::RequestBuilder send fail".to_string())?;
 
         println!("Status: {} {}", response.status_code(), response.reason());
         println!("report response: {:?}", response);
@@ -156,7 +150,7 @@ impl Net {
             println!("IasAttestation report: {}", attn_report);
         };
 
-        return Ok((attn_report, sig, sig_cert));
+        Ok((attn_report, sig, sig_cert))
     }
 
     fn make_ias_client_config() -> rustls::ClientConfig {
@@ -170,7 +164,7 @@ impl Net {
     }
 
     fn percent_decode(orig: String) -> String {
-        let v: Vec<&str> = orig.split("%").collect();
+        let v: Vec<&str> = orig.split('%').collect();
         let mut ret = String::new();
         ret.push_str(v[0]);
         if v.len() > 1 {
@@ -180,57 +174,6 @@ impl Net {
             }
         }
         ret
-    }
-
-    fn parse_response_sigrl(resp: &[u8]) -> Result<Vec<u8>, String> {
-        info!("parse_response_sigrl");
-        let mut headers = [httparse::EMPTY_HEADER; 16];
-        let mut respp = httparse::Response::new(&mut headers);
-        let result = respp.parse(resp);
-        debug!("parse result {:?}", result);
-        debug!("parse response{:?}", respp);
-
-        let msg: &'static str;
-
-        match respp.code {
-            Some(200) => msg = "OK Operation Successful",
-            Some(401) => msg = "Unauthorized Failed to authenticate or authorize request.",
-            Some(404) => msg = "Not Found GID does not refer to a valid EPID group ID.",
-            Some(500) => msg = "Internal error occurred",
-            Some(503) => {
-                msg = "Service is currently not able to process the request (due to
-                a temporary overloading or maintenance). This is a
-                temporary state – the same request can be repeated after
-                some time. "
-            }
-            _ => msg = "Unknown error occured",
-        }
-
-        debug!("{}", msg);
-        let mut len_num: u32 = 0;
-
-        for i in 0..respp.headers.len() {
-            let h = respp.headers[i];
-            if h.name == "content-length" {
-                let len_str = String::from_utf8(h.value.to_vec()).unwrap();
-                len_num = len_str
-                    .parse::<u32>()
-                    .map_err(|_| "parse len failed".to_string())?;
-                println!("content length = {}", len_num);
-            }
-        }
-
-        if len_num != 0 {
-            let header_len = result.unwrap().unwrap();
-            let resp_body = &resp[header_len..];
-            println!("Base64-encoded SigRL: {:?}", resp_body);
-
-            return Ok(base64::decode(str::from_utf8(resp_body).unwrap())
-                .map_err(|_| "parse body failed".to_string())?);
-        }
-
-        // len_num == 0
-        Ok(Vec::new())
     }
 }
 

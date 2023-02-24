@@ -212,31 +212,33 @@ impl DcapAttestation {
         let sgx_quote = dar.quote;
         log::trace!("dcap quote: {}", sgx_quote);
 
-        let mut enclave_field = EnclaveFields::default();
-        enclave_field.version = sgx_quote.inner.header.version;
-        enclave_field.sign_type = 1;
-        enclave_field.isv_enclave_quote_status = "".to_string();
-        enclave_field.mr_enclave = sgx_quote
-            .inner
-            .report_body
-            .mr_enclave
-            .m
-            .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?;
-        enclave_field.mr_signer = sgx_quote
-            .inner
-            .report_body
-            .mr_signer
-            .m
-            .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?;
-        enclave_field.report_data = sgx_quote
-            .inner
-            .report_body
-            .report_data
-            .d
-            .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?;
+        let enclave_field = EnclaveFields {
+            version: sgx_quote.inner.header.version,
+            sign_type: 1,
+            isv_enclave_quote_status: "".to_string(),
+            mr_enclave: sgx_quote
+                .inner
+                .report_body
+                .mr_enclave
+                .m
+                .try_into()
+                .map_err(|_| DCAPError::VerifyFailed)?,
+            mr_signer: sgx_quote
+                .inner
+                .report_body
+                .mr_signer
+                .m
+                .try_into()
+                .map_err(|_| DCAPError::VerifyFailed)?,
+            report_data: sgx_quote
+                .inner
+                .report_body
+                .report_data
+                .d
+                .try_into()
+                .map_err(|_| DCAPError::VerifyFailed)?,
+            ..Default::default()
+        };
 
         Ok(enclave_field)
     }
@@ -280,7 +282,7 @@ impl IasAttestation {
 
         let quote = base64::decode(&report_data.isv_enclave_quote_body).map_err(|_| {
             error!("[EPID VERIFY ERROR]OUTDATED");
-            return DCAPError::VerifyFailed;
+            DCAPError::VerifyFailed
         })?;
         log::trace!("Quote = {:?}", quote);
 
@@ -291,28 +293,22 @@ impl IasAttestation {
 
         let sgx_quote: sgx_quote_t = unsafe { core::ptr::read(quote.as_ptr() as *const _) };
 
-        let mut enclave_field = EnclaveFields::default();
-        enclave_field.version = sgx_quote.version;
-        enclave_field.sign_type = sgx_quote.sign_type;
-        enclave_field.isv_enclave_quote_status = report_data.isv_enclave_quote_status;
-        enclave_field.mr_enclave = sgx_quote
+        let enclave_field = EnclaveFields { version: sgx_quote.version, sign_type: sgx_quote.sign_type, isv_enclave_quote_status: report_data.isv_enclave_quote_status, mr_enclave: sgx_quote
             .report_body
             .mr_enclave
             .m
             .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?;
-        enclave_field.mr_signer = sgx_quote
+            .map_err(|_| DCAPError::VerifyFailed)?, mr_signer: sgx_quote
             .report_body
             .mr_signer
             .m
             .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?;
-        enclave_field.report_data = sgx_quote
+            .map_err(|_| DCAPError::VerifyFailed)?, report_data: sgx_quote
             .report_body
             .report_data
             .d
             .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?;
+            .map_err(|_| DCAPError::VerifyFailed)?, ..Default::default() };
 
         Ok(enclave_field)
     }
@@ -322,11 +318,11 @@ impl IasAttestation {
         let sig_cert_dec =
             base64::decode_config(&report.cert_raw, base64::STANDARD).map_err(|_| {
                 error!("[EPID VERIFY ERROR]sig_cert_dec base64 decode_config");
-                return DCAPError::VerifyFailed;
+                DCAPError::VerifyFailed
             })?;
         let sig_cert = webpki::EndEntityCert::from(sig_cert_dec.as_ref()).map_err(|_| {
             error!("[EPID VERIFY ERROR]sig_cert from EndEntityCert ");
-            return DCAPError::VerifyFailed;
+            DCAPError::VerifyFailed
         })?;
         log::debug!("sig_cert_dec {:?}", sig_cert_dec);
         let chain: Vec<&[u8]> = vec![];
@@ -367,7 +363,7 @@ impl IasAttestation {
                     "[EPID VERIFY ERROR]verify_is_valid_tls_server_cert fail {:?}",
                     e
                 );
-                return DCAPError::VerifyFailed;
+                DCAPError::VerifyFailed
             })?;
 
         // Verify the signature against the signing cert
@@ -375,7 +371,7 @@ impl IasAttestation {
             .verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &report.ra_report, &sig)
             .map_err(|_| {
                 error!("[EPID VERIFY ERROR]verify_signature fail ");
-                return DCAPError::VerifyFailed;
+                DCAPError::VerifyFailed
             })?;
 
         Ok(())
