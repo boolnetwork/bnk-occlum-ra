@@ -1,6 +1,6 @@
 #[cfg(not(feature = "std"))]
 use crate::alloc::string::ToString;
-use crate::attestation::{AttestationReport, AttestationStyle, DcapAttestation, EnclaveFields};
+use crate::attestation::{AttestationReport, AttestationStyle, DcapAttestation, EnclaveFields, IasAttestation};
 #[cfg(not(feature = "std"))]
 use alloc::format;
 #[cfg(not(feature = "std"))]
@@ -20,9 +20,21 @@ pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<(Vec<u8>, Vec<u
         }
     };
 
-    let enclave = match DcapAttestation::verify(&report, now) {
-        Err(_e) => return Err("DcapAttestation::verify err".to_string()),
-        Ok(enclave) => enclave,
+    let enclave = match report.style {
+        AttestationStyle::EPID => {
+            let enclave = match IasAttestation::verify(&report, now) {
+                Err(_e) => return Err("IasAttestation::verify err".to_string()),
+                Ok(enclave) => enclave,
+            };
+            enclave
+        },
+        AttestationStyle::DCAP => {
+            let enclave = match DcapAttestation::verify(&report, now) {
+                Err(_e) => return Err("DcapAttestation::verify err".to_string()),
+                Ok(enclave) => enclave,
+            };
+            enclave
+        },
     };
 
     Ok((enclave.mr_enclave, enclave.report_data))
@@ -41,9 +53,21 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
         }
     };
 
-    let enclave = match DcapAttestation::verify(&report, now) {
-        Err(e) => return Err(format!("DcapAttestation::verify err {e:?}")),
-        Ok(enclave) => enclave,
+    let enclave = match report.style {
+        AttestationStyle::EPID => {
+            let enclave = match IasAttestation::verify(&report, now) {
+                Err(_e) => return Err("IasAttestation::verify err".to_string()),
+                Ok(enclave) => enclave,
+            };
+            enclave
+        },
+        AttestationStyle::DCAP => {
+            let enclave = match DcapAttestation::verify(&report, now) {
+                Err(_e) => return Err("DcapAttestation::verify err".to_string()),
+                Ok(enclave) => enclave,
+            };
+            enclave
+        },
     };
 
     if enclave.report_data != pub_k.to_vec() {
@@ -538,6 +562,7 @@ mod tests {
         118, 113, 82, 88, 97, 113, 73, 61, 10, 45, 45, 45, 45, 45, 69, 78, 68, 32, 67, 69, 82, 84,
         73, 70, 73, 67, 65, 84, 69, 45, 45, 45, 45, 45, 10,
     ];
+
     static now: u64 = 1676365385u64;
 
     #[test]
@@ -553,6 +578,17 @@ mod tests {
 
     #[test]
     pub fn test_err_certs_report() {
+        let re = AttestationReport {
+            style: AttestationStyle::DCAP,
+            data: report_err.to_vec(),
+        };
+
+        let result = verify_only_report(&re.into_payload(), now);
+        println!("result is {:?}", result);
+    }
+
+    #[test]
+    pub fn test_epid_report() {
         let re = AttestationReport {
             style: AttestationStyle::DCAP,
             data: report_err.to_vec(),
