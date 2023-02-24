@@ -1,26 +1,26 @@
+use crate::epid_occlum::EpidReport;
+use core::convert::TryFrom;
+use http_req::request::Method::{GET, POST};
+use http_req::{request::RequestBuilder, tls, uri::Uri};
 use log::{debug, error, info};
+use serde::{Deserialize, Serialize};
 use sgx_types::*;
+use sha2::Digest;
 use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::prelude::v1::*;
 use std::str;
 use std::sync::Arc;
-use sha2::Digest;
 use webpki::DNSNameRef;
-use http_req::{request::RequestBuilder, tls, uri::Uri};
-use core::convert::TryFrom;
-use http_req::request::Method::{GET, POST};
-use serde::{Serialize, Deserialize};
-use crate::epid_occlum::EpidReport;
 
 pub const DEV_HOSTNAME: &'static str = "api.trustedservices.intel.com";
 pub const SIGRL_SUFFIX: &'static str = "/sgx/dev/attestation/v4/sigrl/";
 pub const REPORT_SUFFIX: &'static str = "/sgx/dev/attestation/v4/report";
 
-#[derive(Serialize,Deserialize ,Debug)]
-pub struct Data{
-    isvEnclaveQuote: String
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Data {
+    isvEnclaveQuote: String,
 }
 
 pub struct Net {
@@ -43,8 +43,9 @@ impl Net {
 
     pub fn get_report(&self, fd: String, quote: Vec<u8>) -> Result<EpidReport, String> {
         let encoded_quote = base64::encode(&quote[..]);
-        let (att_report, sig, sig_cert) = self.http_get_report(fd.clone(),REPORT_SUFFIX.to_string()
-                                        ,encoded_quote).unwrap();
+        let (att_report, sig, sig_cert) = self
+            .http_get_report(fd.clone(), REPORT_SUFFIX.to_string(), encoded_quote)
+            .unwrap();
 
         return Ok(EpidReport {
             ra_report: att_report.as_bytes().to_vec(),
@@ -53,12 +54,12 @@ impl Net {
         });
     }
 
-    fn http_get_sigrl(&self, ias_url: String, suffix: String, gid: u32) -> Result<Vec<u8>,String>{
+    fn http_get_sigrl(&self, ias_url: String, suffix: String, gid: u32) -> Result<Vec<u8>, String> {
         let url = format!("{ias_url}{suffix}{gid:08x}");
-        println!("url {:?}",url);
+        println!("url {:?}", url);
 
-        let addr: Uri = Uri::try_from(url.as_str())
-            .or_else(|_| Err("Error::Uri bad".to_string()))?;
+        let addr: Uri =
+            Uri::try_from(url.as_str()).or_else(|_| Err("Error::Uri bad".to_string()))?;
 
         let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
             .or_else(|_| Err("Error::TcpStream connect fail".to_string()))?;
@@ -71,7 +72,7 @@ impl Net {
 
         let response = RequestBuilder::new(&addr)
             .method(GET)
-            .header("Ocp-Apim-Subscription-Key",&self.ias_key)
+            .header("Ocp-Apim-Subscription-Key", &self.ias_key)
             .header("Connection", "Close")
             .send(&mut stream, &mut writer)
             .or_else(|_| Err("Error::RequestBuilder send fail".to_string()))?;
@@ -79,25 +80,30 @@ impl Net {
         println!("Status: {} {}", response.status_code(), response.reason());
 
         let body_len = response.headers().get("Content-Length").unwrap();
-        if body_len == "0"{
+        if body_len == "0" {
             return Ok(Vec::new());
         }
         return Ok(base64::decode(str::from_utf8(&writer).unwrap())
             .map_err(|_| "parse body failed".to_string())?);
     }
 
-    fn http_get_report(&self, ias_url: String, suffix: String, encode_json: String) -> Result<(String, String, String), String>{
+    fn http_get_report(
+        &self,
+        ias_url: String,
+        suffix: String,
+        encode_json: String,
+    ) -> Result<(String, String, String), String> {
         let url = format!("{ias_url}{suffix}");
-        println!("url {:?}",url);
-        let data = Data{
-            isvEnclaveQuote: encode_json
+        println!("url {:?}", url);
+        let data = Data {
+            isvEnclaveQuote: encode_json,
         };
         let encode_json = serde_json::to_string(&data).unwrap();
-        println!("encode_json {:?}",encode_json);
-        println!("len {}",encode_json.len());
+        println!("encode_json {:?}", encode_json);
+        println!("len {}", encode_json.len());
 
-        let addr: Uri = Uri::try_from(url.as_str())
-            .or_else(|_| Err("Error::Uri bad".to_string()))?;
+        let addr: Uri =
+            Uri::try_from(url.as_str()).or_else(|_| Err("Error::Uri bad".to_string()))?;
 
         let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
             .or_else(|_| Err("Error::TcpStream connect fail".to_string()))?;
@@ -110,28 +116,38 @@ impl Net {
 
         let response = RequestBuilder::new(&addr)
             .method(POST)
-            .header("Ocp-Apim-Subscription-Key",&self.ias_key)
-            .header("Content-Type","application/json")
-            .header("Content-Length",&encode_json.len())
+            .header("Ocp-Apim-Subscription-Key", &self.ias_key)
+            .header("Content-Type", "application/json")
+            .header("Content-Length", &encode_json.len())
             .header("Connection", "Close")
             .body(encode_json.as_bytes())
             .send(&mut stream, &mut writer)
             .or_else(|_| Err("Error::RequestBuilder send fail".to_string()))?;
 
         println!("Status: {} {}", response.status_code(), response.reason());
-        println!("report response: {:?}",response);
+        println!("report response: {:?}", response);
 
         // parse the response
         let content_len = response.headers().get("Content-Length").unwrap();
-        let body_len = content_len.parse::<u32>().map_err(|_| "parse len failed".to_string())?;
-        let sig = response.headers().get("X-IASReport-Signature").unwrap().to_owned();
-        let mut cert = response.headers().get("X-IASReport-Signing-Certificate").unwrap().to_owned();
+        let body_len = content_len
+            .parse::<u32>()
+            .map_err(|_| "parse len failed".to_string())?;
+        let sig = response
+            .headers()
+            .get("X-IASReport-Signature")
+            .unwrap()
+            .to_owned();
+        let mut cert = response
+            .headers()
+            .get("X-IASReport-Signing-Certificate")
+            .unwrap()
+            .to_owned();
 
         // Remove %0A from cert, and only obtain the signing cert
         cert = cert.replace("%0A", "");
         cert = Self::percent_decode(cert);
         let v: Vec<&str> = cert.split("-----").collect();
-        println!("sig_cert amount: {:?}",v.len());
+        println!("sig_cert amount: {:?}", v.len());
         let sig_cert = v[2].to_string();
 
         let mut attn_report = "".to_string();

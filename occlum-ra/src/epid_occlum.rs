@@ -1,14 +1,14 @@
-#[cfg(feature = "std")]
-use occlum::{sgx_quote_nonce_t, sgx_quote_sign_type_t, sgx_report_data_t};
-#[cfg(feature = "std")]
-use crate::ias::Net;
-use rand::*;
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
 #[cfg(not(feature = "std"))]
 use crate::alloc::string::ToString;
+#[cfg(feature = "std")]
+use crate::ias::Net;
 #[cfg(not(feature = "std"))]
 use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
+use occlum::{sgx_quote_nonce_t, sgx_quote_sign_type_t, sgx_report_data_t};
+use rand::*;
 const SEPARATOR: u8 = 0x7Cu8;
 
 #[derive(Debug)]
@@ -19,33 +19,33 @@ pub struct EpidReport {
 }
 
 impl EpidReport {
-// use for transfer to payload of cert
-pub fn into_payload(self) -> Vec<u8> {
-    let separator: &[u8] = &[SEPARATOR];
-    let mut payload = Vec::new();
-    payload.extend(self.ra_report);
-    payload.extend(separator);
-    payload.extend(self.signature);
-    payload.extend(separator);
-    payload.extend(self.cert_raw);
-    payload
-}
+    // use for transfer to payload of cert
+    pub fn into_payload(self) -> Vec<u8> {
+        let separator: &[u8] = &[SEPARATOR];
+        let mut payload = Vec::new();
+        payload.extend(self.ra_report);
+        payload.extend(separator);
+        payload.extend(self.signature);
+        payload.extend(separator);
+        payload.extend(self.cert_raw);
+        payload
+    }
 
-pub fn from_payload(payload: &[u8]) -> Result<Self, String> {
-    let mut iter = payload.split(|x| *x == SEPARATOR);
-    let attn_report_raw = iter.next().ok_or("InvalidReportPayload".to_string())?;
-    let sig_raw = iter.next().ok_or("InvalidReportPayload".to_string())?;
-    let sig_cert_raw = iter.next().ok_or("InvalidReportPayload".to_string())?;
-    Ok(Self {
-        ra_report: attn_report_raw.to_vec(),
-        signature: sig_raw.to_vec(),
-        cert_raw: sig_cert_raw.to_vec(),
-    })
-}
+    pub fn from_payload(payload: &[u8]) -> Result<Self, String> {
+        let mut iter = payload.split(|x| *x == SEPARATOR);
+        let attn_report_raw = iter.next().ok_or("InvalidReportPayload".to_string())?;
+        let sig_raw = iter.next().ok_or("InvalidReportPayload".to_string())?;
+        let sig_cert_raw = iter.next().ok_or("InvalidReportPayload".to_string())?;
+        Ok(Self {
+            ra_report: attn_report_raw.to_vec(),
+            signature: sig_raw.to_vec(),
+            cert_raw: sig_cert_raw.to_vec(),
+        })
+    }
 }
 
 #[cfg(feature = "std")]
-pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
+pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String> {
     let spid: String = "B6E792288644E2957A40AF226F5E4DD8".to_string();
     let ias_key: String = "22aa549a2d5e47a2933a753c1cae947c".to_string();
     let sign_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
@@ -72,7 +72,7 @@ pub fn generate_epid_quote(addition: &[u8]) -> Result<EpidReport, String>{
 
     println!("report.svn {:?}", report.body.cpu_svn.svn);
 
-    let quote_buff = epid.get_epid_quote(sigrl, net.spid, report_data,sign_type);
+    let quote_buff = epid.get_epid_quote(sigrl, net.spid, report_data, sign_type);
 
     let quote_buff = occlum::EpidQuote::new_buf(&quote_buff).unwrap();
     println!("quote_buff len {:?}", quote_buff.len());

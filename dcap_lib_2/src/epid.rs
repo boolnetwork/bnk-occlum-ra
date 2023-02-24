@@ -1,6 +1,6 @@
-use std::ffi::CString;
 use crate::prelude::*;
 use rand::RngCore;
+use std::ffi::CString;
 
 const SGXIOC_GET_EPID_GROUP_ID: u64 = 0x80047301;
 const SGXIOC_GEN_EPID_QUOTE: u64 = 0xc0807302;
@@ -54,7 +54,6 @@ struct IoctlCreateReportArg {
     report: *mut sgx_report_t,             // Output
 }
 
-
 pub struct EpidQuote {
     fd: c_int,
     group_id: sgx_epid_group_id_t,
@@ -63,13 +62,13 @@ pub struct EpidQuote {
 
 impl EpidQuote {
     pub fn new() -> Self {
-        let path =  CString::new("/dev/sgx").unwrap();
+        let path = CString::new("/dev/sgx").unwrap();
         let fd = unsafe { libc::open(path.as_ptr(), O_RDONLY) };
         if fd > 0 {
             Self {
                 fd,
                 group_id: sgx_epid_group_id_t::default(),
-                target_info: sgx_target_info_t::default()
+                target_info: sgx_target_info_t::default(),
             }
         } else {
             panic!("Open /dev/sgx failed")
@@ -100,9 +99,13 @@ impl EpidQuote {
         }
     }
 
-    pub fn get_epid_quote(&mut self, sigrl: Vec<u8>, spid: sgx_spid_t, report_data: sgx_report_data_t,
-                          quote_type: sgx_quote_sign_type_t,
-                         ) -> Vec<u8> {
+    pub fn get_epid_quote(
+        &mut self,
+        sigrl: Vec<u8>,
+        spid: sgx_spid_t,
+        report_data: sgx_report_data_t,
+        quote_type: sgx_quote_sign_type_t,
+    ) -> Vec<u8> {
         let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
         let mut os_rng = rand::thread_rng();
         os_rng.fill_bytes(&mut quote_nonce.rand);
@@ -111,16 +114,16 @@ impl EpidQuote {
         let mut quote_buf: [u8; RET_QUOTE_BUF_LEN as usize] = [0; RET_QUOTE_BUF_LEN as usize];
         let mut quote_len: u32 = 0;
 
-        println!("sigrl len {:?}",sigrl.len());
-        let mut args = IoctlGenEPIDQuoteArg{
+        println!("sigrl len {:?}", sigrl.len());
+        let mut args = IoctlGenEPIDQuoteArg {
             report_data,
             quote_type,
             spid,
             nonce: quote_nonce,
-            sigrl_ptr: sigrl.as_ptr() as * const u8,
+            sigrl_ptr: sigrl.as_ptr() as *const u8,
             sigrl_len: sigrl.len() as u32,
             quote_buf_len: RET_QUOTE_BUF_LEN,
-            quote_buf: quote_buf.as_mut_ptr() as * mut u8,
+            quote_buf: quote_buf.as_mut_ptr() as *mut u8,
         };
 
         let ret = unsafe { libc::ioctl(self.fd, IOCTL_GEN_EPID_QUOTE, &args) };
@@ -131,15 +134,17 @@ impl EpidQuote {
         }
     }
 
-    pub fn get_epid_report(&mut self, target_info: *const sgx_target_info_t,
-                           report_data: *const sgx_report_data_t) -> sgx_report_t {
-
+    pub fn get_epid_report(
+        &mut self,
+        target_info: *const sgx_target_info_t,
+        report_data: *const sgx_report_data_t,
+    ) -> sgx_report_t {
         let mut report = sgx_report_t::default();
 
-        let mut args = IoctlCreateReportArg{
+        let mut args = IoctlCreateReportArg {
             target_info,
             report_data,
-            report: &mut report as *mut sgx_report_t
+            report: &mut report as *mut sgx_report_t,
         };
 
         let ret = unsafe { libc::ioctl(self.fd, IOCTL_CREATE_REPORT, &args) };
@@ -150,7 +155,7 @@ impl EpidQuote {
         }
     }
 
-    pub fn new_buf(quote_raw_buf: &[u8]) -> Result<Vec<u8>,String> {
+    pub fn new_buf(quote_raw_buf: &[u8]) -> Result<Vec<u8>, String> {
         if quote_raw_buf.len() < std::mem::size_of::<sgx_quote_t>() {
             return Err("sgx_quote_t too small".to_string());
         }

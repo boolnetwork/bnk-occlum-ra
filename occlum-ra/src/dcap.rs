@@ -1,11 +1,3 @@
-use core::mem::size_of;
-use core::{fmt, slice};
-use itertools::Itertools;
-use ring::signature::VerificationAlgorithm;
-use sgx_types::*;
-use sha2::Digest;
-use sha2::Sha256;
-use core::convert::TryFrom;
 #[cfg(not(feature = "std"))]
 use crate::alloc::string::ToString;
 #[cfg(not(feature = "std"))]
@@ -16,6 +8,14 @@ use alloc::string::String;
 use alloc::vec;
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
+use core::convert::TryFrom;
+use core::mem::size_of;
+use core::{fmt, slice};
+use itertools::Itertools;
+use ring::signature::VerificationAlgorithm;
+use sgx_types::*;
+use sha2::Digest;
+use sha2::Sha256;
 
 pub(crate) fn sha256_combine_slice(pk: &[u8], auth_data: &[u8]) -> [u8; 32] {
     let mut pk_ad = vec![];
@@ -166,11 +166,7 @@ impl fmt::Display for QlEcdsaSig {
             "\t attest_pub_key: {:02x}",
             self.inner.attest_pub_key.iter().format("")
         )?;
-        write!(
-            f,
-            "\t qe_report: {}",
-            ReportBody::new(self.inner.qe_report)
-        )?;
+        write!(f, "\t qe_report: {}", ReportBody::new(self.inner.qe_report))?;
         write!(
             f,
             "\t qe_report_sig: {:02x}",
@@ -312,11 +308,11 @@ impl DcapAttestationReport {
         // verify qe signature
         // verify qe signature
         #[cfg(feature = "std")]
-            let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report);
+        let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report);
         #[cfg(feature = "std")]
-            let report = unsafe { brw.read_unaligned() };
+        let report = unsafe { brw.read_unaligned() };
         #[cfg(feature = "std")]
-            let qe_data = unsafe {
+        let qe_data = unsafe {
             slice::from_raw_parts(
                 (&report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
                 SGX_QUOTE_REPORT_BODY_LEN,
@@ -325,7 +321,7 @@ impl DcapAttestationReport {
 
         // verify qe signature
         #[cfg(not(feature = "std"))]
-            let qe_data = unsafe {
+        let qe_data = unsafe {
             slice::from_raw_parts(
                 (&self.ecdsa_sig.inner.qe_report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
                 SGX_QUOTE_REPORT_BODY_LEN,
@@ -477,8 +473,8 @@ impl DerCertChain {
 
         let chain: Vec<&[u8]> = vec![&pck_der, &ca_der];
         //let end_cert = webpki::EndEntityCert::try_from(end_der.as_ref()).map_err(|_| DCAPError::InvalidPemCert)?;
-        let end_cert = webpki::EndEntityCert::from(end_der.as_ref())
-            .map_err(|_| DCAPError::InvalidPemCert)?;
+        let end_cert =
+            webpki::EndEntityCert::from(end_der.as_ref()).map_err(|_| DCAPError::InvalidPemCert)?;
 
         let trust_anchors: Vec<webpki::TrustAnchor> = vec![ca];
         let time_now = webpki::Time::from_seconds_since_unix_epoch(now);

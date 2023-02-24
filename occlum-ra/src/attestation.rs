@@ -1,24 +1,24 @@
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
 use crate::dcap::DCAPError;
 use crate::dcap::DcapAttestationReport;
+use crate::dcap::SUPPORTED_SIG_ALGS;
+use crate::epid_occlum::EpidReport;
 #[cfg(feature = "std")]
 use crate::occlum_dcap::generate_quote;
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::vec;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+use core::convert::TryFrom;
+use core::convert::TryInto;
 use core::fmt;
 use itertools::Itertools;
 use log::error;
 use serde::{self, Deserialize, Serialize};
-use core::convert::TryFrom;
-use core::convert::TryInto;
 use sgx_types::sgx_quote_t;
-use crate::dcap::SUPPORTED_SIG_ALGS;
-use crate::epid_occlum::EpidReport;
-#[cfg(not(feature = "std"))]
-use crate::alloc::string::ToString;
-#[cfg(not(feature = "std"))]
-use alloc::string::String;
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
-#[cfg(not(feature = "std"))]
-use alloc::vec;
 #[derive(Default, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReportData {
@@ -156,7 +156,7 @@ pub static IAS_SERVER_ROOTS: &[webpki::TrustAnchor] = &[
     },
 ];
 
-pub const IAS_REPORT_CA : &str = "-----BEGIN CERTIFICATE-----
+pub const IAS_REPORT_CA: &str = "-----BEGIN CERTIFICATE-----
 MIIFSzCCA7OgAwIBAgIJANEHdl0yo7CUMA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNV
 BAYTAlVTMQswCQYDVQQIDAJDQTEUMBIGA1UEBwwLU2FudGEgQ2xhcmExGjAYBgNV
 BAoMEUludGVsIENvcnBvcmF0aW9uMTAwLgYDVQQDDCdJbnRlbCBTR1ggQXR0ZXN0
@@ -187,7 +187,6 @@ Ud4APK0wZTGtfPXU7w+IBdG5Ez0kE1qzxGQaL4gINJ1zMyleDnbuS8UicjJijvqA
 DD+gT9sSpssq0ascmvH49MOgjt1yoysLtdCtJW/9FZpoOypaHx0R+mJTLwPXVMrv
 DaVzWh5aiEx+idkSGMnX
 -----END CERTIFICATE-----";
-
 
 pub struct DcapAttestation;
 
@@ -279,9 +278,10 @@ impl IasAttestation {
             return Err(DCAPError::VerifyFailed);
         }
 
-        let quote = base64::decode(&report_data.isv_enclave_quote_body)
-            .map_err(|_| {error!("[EPID VERIFY ERROR]OUTDATED");
-                         return DCAPError::VerifyFailed;})?;
+        let quote = base64::decode(&report_data.isv_enclave_quote_body).map_err(|_| {
+            error!("[EPID VERIFY ERROR]OUTDATED");
+            return DCAPError::VerifyFailed;
+        })?;
         log::trace!("Quote = {:?}", quote);
 
         if quote.len() < 432 {
@@ -319,13 +319,16 @@ impl IasAttestation {
 
     fn verify_cert(report: &EpidReport, now: u64) -> Result<(), DCAPError> {
         let sig = base64::decode(&report.signature).map_err(|_| DCAPError::VerifyFailed)?;
-        let sig_cert_dec = base64::decode_config(&report.cert_raw, base64::STANDARD)
-            .map_err(|_|{error!("[EPID VERIFY ERROR]sig_cert_dec base64 decode_config");
-                return DCAPError::VerifyFailed;})?;
-        let sig_cert = webpki::EndEntityCert::from(sig_cert_dec.as_ref())
-            .map_err(|_| {error!("[EPID VERIFY ERROR]sig_cert from EndEntityCert ");
-                return DCAPError::VerifyFailed;})?;
-        log::debug!("sig_cert_dec {:?}",sig_cert_dec);
+        let sig_cert_dec =
+            base64::decode_config(&report.cert_raw, base64::STANDARD).map_err(|_| {
+                error!("[EPID VERIFY ERROR]sig_cert_dec base64 decode_config");
+                return DCAPError::VerifyFailed;
+            })?;
+        let sig_cert = webpki::EndEntityCert::from(sig_cert_dec.as_ref()).map_err(|_| {
+            error!("[EPID VERIFY ERROR]sig_cert from EndEntityCert ");
+            return DCAPError::VerifyFailed;
+        })?;
+        log::debug!("sig_cert_dec {:?}", sig_cert_dec);
         let chain: Vec<&[u8]> = vec![];
 
         // let mut ias_ca_stripped = IAS_REPORT_CA.as_bytes().to_vec();
@@ -351,22 +354,30 @@ impl IasAttestation {
         // let mut chain:Vec<&[u8]> = Vec::new();
         // chain.push(&ias_cert_dec);
 
-
         let time_now = webpki::Time::from_seconds_since_unix_epoch(now);
-        sig_cert.verify_is_valid_tls_server_cert(
-            SUPPORTED_SIG_ALGS,
-            &webpki::TLSServerTrustAnchors(IAS_SERVER_ROOTS),
-            &chain,
-            time_now,
-        ).map_err(|e| { error!("[EPID VERIFY ERROR]verify_is_valid_tls_server_cert fail {:?}",e);
-            return DCAPError::VerifyFailed;})?;
+        sig_cert
+            .verify_is_valid_tls_server_cert(
+                SUPPORTED_SIG_ALGS,
+                &webpki::TLSServerTrustAnchors(IAS_SERVER_ROOTS),
+                &chain,
+                time_now,
+            )
+            .map_err(|e| {
+                error!(
+                    "[EPID VERIFY ERROR]verify_is_valid_tls_server_cert fail {:?}",
+                    e
+                );
+                return DCAPError::VerifyFailed;
+            })?;
 
         // Verify the signature against the signing cert
-        sig_cert.verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &report.ra_report, &sig)
-            .map_err(|_| {error!("[EPID VERIFY ERROR]verify_signature fail ");
-                return DCAPError::VerifyFailed;})?;
+        sig_cert
+            .verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &report.ra_report, &sig)
+            .map_err(|_| {
+                error!("[EPID VERIFY ERROR]verify_signature fail ");
+                return DCAPError::VerifyFailed;
+            })?;
 
         Ok(())
     }
-
 }

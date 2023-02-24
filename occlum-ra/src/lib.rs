@@ -7,11 +7,11 @@
 
 pub mod attestation;
 pub mod dcap;
-#[cfg(feature = "std")]
-pub mod occlum_dcap;
+pub mod epid_occlum;
 #[cfg(feature = "std")]
 pub mod ias;
-pub mod epid_occlum;
+#[cfg(feature = "std")]
+pub mod occlum_dcap;
 #[cfg(feature = "std")]
 pub mod tls;
 pub mod verify;

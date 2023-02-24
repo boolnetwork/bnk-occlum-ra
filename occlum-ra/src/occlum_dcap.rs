@@ -1,5 +1,5 @@
-use occlum_dcap::*;
 use core::convert::TryFrom;
+use occlum_dcap::*;
 use std::io::Result;
 
 pub struct Dcap {

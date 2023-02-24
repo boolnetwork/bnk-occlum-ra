@@ -1,10 +1,10 @@
+mod epid;
 mod occlum_dcap;
 mod prelude;
-mod epid;
 
-pub use crate::prelude::*;
-pub use crate::occlum_dcap::*;
 pub use crate::epid::*;
+pub use crate::occlum_dcap::*;
+pub use crate::prelude::*;
 
 #[no_mangle]
 pub extern "C" fn dcap_quote_open() -> *mut c_void {
@@ -14,12 +14,10 @@ pub extern "C" fn dcap_quote_open() -> *mut c_void {
 #[no_mangle]
 pub extern "C" fn dcap_get_quote_size(handle: *mut c_void) -> u32 {
     if handle.is_null() {
-        return 0
+        return 0;
     }
 
-    let dcap = unsafe {
-        &mut *(handle as *mut DcapQuote)
-    };
+    let dcap = unsafe { &mut *(handle as *mut DcapQuote) };
 
     dcap.get_quote_size()
 }
@@ -28,15 +26,13 @@ pub extern "C" fn dcap_get_quote_size(handle: *mut c_void) -> u32 {
 pub extern "C" fn dcap_generate_quote(
     handle: *mut c_void,
     quote_buf: *mut u8,
-    report_data: *const sgx_report_data_t) -> i32
-{
+    report_data: *const sgx_report_data_t,
+) -> i32 {
     if handle.is_null() {
-        return -1
+        return -1;
     }
 
-    let dcap = unsafe {
-        &mut *(handle as *mut DcapQuote)
-    };
+    let dcap = unsafe { &mut *(handle as *mut DcapQuote) };
 
     dcap.generate_quote(quote_buf, report_data).unwrap();
 
@@ -46,12 +42,10 @@ pub extern "C" fn dcap_generate_quote(
 #[no_mangle]
 pub extern "C" fn dcap_get_supplemental_data_size(handle: *mut c_void) -> u32 {
     if handle.is_null() {
-        return 0
+        return 0;
     }
 
-    let dcap = unsafe {
-        &mut *(handle as *mut DcapQuote)
-    };
+    let dcap = unsafe { &mut *(handle as *mut DcapQuote) };
 
     dcap.get_supplemental_data_size()
 }
@@ -64,15 +58,13 @@ pub extern "C" fn dcap_verify_quote(
     collateral_expiration_status: *mut u32,
     quote_verification_result: *mut sgx_ql_qv_result_t,
     supplemental_data_size: u32,
-    supplemental_data: *mut u8) -> i32
-{
+    supplemental_data: *mut u8,
+) -> i32 {
     if handle.is_null() {
-        return -1
+        return -1;
     }
 
-    let dcap = unsafe {
-        &mut *(handle as *mut DcapQuote)
-    };
+    let dcap = unsafe { &mut *(handle as *mut DcapQuote) };
 
     let mut verify_arg = IoctlVerDCAPQuoteArg {
         quote_buf: quote_buf,
@@ -88,16 +80,13 @@ pub extern "C" fn dcap_verify_quote(
     0
 }
 
-
 #[no_mangle]
 pub extern "C" fn dcap_quote_close(handle: *mut c_void) {
     if handle.is_null() {
-        return
+        return;
     }
 
-    let dcap = unsafe {
-        &mut *(handle as *mut DcapQuote)
-    };
+    let dcap = unsafe { &mut *(handle as *mut DcapQuote) };
 
     dcap.close();
 

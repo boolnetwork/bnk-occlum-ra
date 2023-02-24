@@ -1,5 +1,5 @@
-use std::ffi::CString;
 use crate::prelude::*;
+use std::ffi::CString;
 
 const SGXIOC_GET_DCAP_QUOTE_SIZE: u64 = 0x80047307;
 const SGXIOC_GEN_DCAP_QUOTE: u64 = 0xc0187308;
@@ -19,7 +19,6 @@ cfg_if::cfg_if! {
         const IOCTL_VER_DCAP_QUOTE: u64 = SGXIOC_VER_DCAP_QUOTE;
     }
 }
-
 
 // Copy from occlum/src/libos/src/fs/dev_fs/dev_sgx/mod.rs
 //#[allow(dead_code)]
@@ -50,7 +49,7 @@ pub struct DcapQuote {
 
 impl DcapQuote {
     pub fn new() -> Self {
-        let path =  CString::new("/dev/sgx").unwrap();
+        let path = CString::new("/dev/sgx").unwrap();
         let fd = unsafe { libc::open(path.as_ptr(), O_RDONLY) };
         if fd > 0 {
             Self {
@@ -74,7 +73,11 @@ impl DcapQuote {
         }
     }
 
-    pub fn generate_quote(&mut self, quote_buf: *mut u8,  report_data: *const sgx_report_data_t) -> Result<i32, &'static str> {
+    pub fn generate_quote(
+        &mut self,
+        quote_buf: *mut u8,
+        report_data: *const sgx_report_data_t,
+    ) -> Result<i32, &'static str> {
         let quote_arg: IoctlGenDCAPQuoteArg = IoctlGenDCAPQuoteArg {
             report_data: report_data,
             quote_size: &mut self.quote_size,
@@ -85,7 +88,7 @@ impl DcapQuote {
         if ret < 0 {
             Err("IOCTRL IOCTL_GEN_DCAP_QUOTE failed")
         } else {
-            Ok( 0 )
+            Ok(0)
         }
     }
 
@@ -100,13 +103,16 @@ impl DcapQuote {
         }
     }
 
-    pub fn verify_quote(&mut self, verify_arg: *mut IoctlVerDCAPQuoteArg) -> Result<i32, &'static str> {
+    pub fn verify_quote(
+        &mut self,
+        verify_arg: *mut IoctlVerDCAPQuoteArg,
+    ) -> Result<i32, &'static str> {
         let ret = unsafe { libc::ioctl(self.fd, IOCTL_VER_DCAP_QUOTE, verify_arg) };
         if ret < 0 {
             println!("ret = {}", ret);
             Err("IOCTRL IOCTL_VER_DCAP_QUOTE failed")
         } else {
-            Ok( 0 )
+            Ok(0)
         }
     }
 
@@ -137,35 +143,36 @@ pub struct GETKEY {
 
 impl GETKEY {
     pub fn new() -> Self {
-        let path =  CString::new("/dev/sgx").unwrap();
+        let path = CString::new("/dev/sgx").unwrap();
         let fd = unsafe { libc::open(path.as_ptr(), O_RDONLY) };
         if fd > 0 {
-            Self {
-                fd: fd,
-            }
+            Self { fd: fd }
         } else {
             panic!("Open /dev/sgx failed")
         }
     }
 
-    pub fn get_key(&mut self, request: *const sgx_key_request_t) -> Result<sgx_key_128bit_t, &'static str> {
+    pub fn get_key(
+        &mut self,
+        request: *const sgx_key_request_t,
+    ) -> Result<sgx_key_128bit_t, &'static str> {
         let mut key: sgx_key_128bit_t = [0u8; 16];
 
         let key_args: IoctlGetKeyArg = IoctlGetKeyArg {
             key_request: request,
-            key: &mut key
+            key: &mut key,
         };
 
         let ret = unsafe { libc::ioctl(self.fd, IOCTL_GET_KEY, &key_args) };
         if ret < 0 {
             Err("IOCTRL IOCTL_GET_KEY failed")
         } else {
-            Ok( key )
+            Ok(key)
         }
     }
 }
 
-pub fn get_key(report: *const sgx_report_body_t) -> sgx_key_128bit_t{
+pub fn get_key(report: *const sgx_report_body_t) -> sgx_key_128bit_t {
     let mut get_key = GETKEY::new();
 
     let attribute_mask = sgx_attributes_t {
