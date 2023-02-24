@@ -8,8 +8,7 @@ use log::error;
 use serde::{self, Deserialize, Serialize};
 use core::convert::TryFrom;
 use core::convert::TryInto;
-#[cfg(feature = "std")]
-use occlum_dcap::sgx_quote_t;
+use sgx_types::sgx_quote_t;
 use crate::dcap::SUPPORTED_SIG_ALGS;
 use crate::epid_occlum::EpidReport;
 #[cfg(not(feature = "std"))]
@@ -254,7 +253,6 @@ impl IasAttestation {
         Ok(re)
     }
 
-    #[cfg(feature = "std")]
     pub fn verify(report: &AttestationReport, now: u64) -> Result<EnclaveFields, DCAPError> {
         assert!(report.style == AttestationStyle::EPID);
 
