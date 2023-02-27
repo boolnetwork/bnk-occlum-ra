@@ -1,6 +1,6 @@
 use occlum_ra;
 
-use occlum_ra::{generate_cert_key, generate_epid, verify_cert};
+use occlum_ra::{generate_cert_key, generate_epid, get_fingerprint, get_fingerprint_epid, verify_cert};
 use std::time::{SystemTime, UNIX_EPOCH};
 use occlum_ra::attestation::{AttestationReport, AttestationStyle, IasAttestation};
 
@@ -30,4 +30,8 @@ fn main() {
     let result = IasAttestation::verify(&epid_attestation,now);
     println!("verify epid result {:?}", result);
 
+    let fingerprint = get_fingerprint_epid();
+    println!("fingerprint {:?}",fingerprint);
+    let fingerprint = get_fingerprint();
+    println!("fingerprint {:?}",fingerprint);
 }

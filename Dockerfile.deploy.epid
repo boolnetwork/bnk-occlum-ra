@@ -27,8 +27,8 @@ FROM occlum/occlum:0.29.4-ubuntu20.04 as packager
 WORKDIR /RUST
 COPY ./ ./
 WORKDIR /RUST
-RUN chmod +x ./run_rust_demo_on_occlum_docker.sh && \
-    ./run_rust_demo_on_occlum_docker.sh && \
+RUN chmod +x ./run_rust_demo_on_occlum_docker_epid.sh && \
+    ./run_rust_demo_on_occlum_docker_epid.sh && \
     cd occlum_instance &&\
     occlum package --debug
 
