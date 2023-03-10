@@ -27,6 +27,8 @@ deploy:
 
 `cp ./occlum/servers/rust_app/Dockerfile.deploy ./`
 
+
+
 ## 2. build image
 dev:
 

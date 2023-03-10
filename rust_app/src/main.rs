@@ -4,8 +4,17 @@ use occlum_ra::{generate_cert_key, generate_epid, get_fingerprint, get_fingerpri
 use std::time::{SystemTime, UNIX_EPOCH};
 use occlum_ra::attestation::{AttestationReport, AttestationStyle, IasAttestation};
 
+#[cfg(not(target_env = "msvc"))]
+use tikv_jemallocator::Jemalloc;
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 fn main() {
     env_logger::init();
+
+    let read_result = std::fs::read_to_string("/host/test.config").unwrap();
+    println!("read_result {:?}",read_result);
 
     println!("start");
     let cert_der = match generate_cert_key() {
