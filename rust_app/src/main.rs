@@ -11,36 +11,10 @@ use tikv_jemallocator::Jemalloc;
 static GLOBAL: Jemalloc = Jemalloc;
 
 fn main() {
-    env_logger::init();
-
-    let read_result = std::fs::read_to_string("/host/test.config").unwrap();
+    let read_result = std::fs::read_to_string("/test.config");
     println!("read_result {:?}",read_result);
 
-    println!("start");
-    let cert_der = match generate_cert_key() {
-        Err(e) => panic!("error: {:?}", e),
-        Ok((a, b)) => b,
-    };
+    let write_result = std::fs::write("/test.config","aaaaaaaa");
+    println!("write_result {:?}",write_result);
 
-    let res = verify_cert(&cert_der);
-
-    println!("verify_cert result {:?}", res);
-
-    let result = IasAttestation::create_report("epid".as_bytes()).unwrap();
-    let epid_attestation = AttestationReport{
-        style: AttestationStyle::EPID,
-        data: result.into_payload()
-    };
-
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let result = IasAttestation::verify(&epid_attestation,now);
-    println!("verify epid result {:?}", result);
-
-    let fingerprint = get_fingerprint_epid();
-    println!("fingerprint {:?}",fingerprint);
-    let fingerprint = get_fingerprint();
-    println!("fingerprint {:?}",fingerprint);
 }
