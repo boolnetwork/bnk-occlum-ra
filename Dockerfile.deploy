@@ -27,6 +27,7 @@ FROM occlum/occlum:0.29.4-ubuntu20.04 as packager
 WORKDIR /RUST
 COPY ./ ./
 WORKDIR /RUST
+RUN apt update &&\ apt install -y clang
 RUN chmod +x ./run_rust_demo_on_occlum_docker.sh && \
     ./run_rust_demo_on_occlum_docker.sh && \
     cd occlum_instance &&\
