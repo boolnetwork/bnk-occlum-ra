@@ -10,11 +10,31 @@ use tikv_jemallocator::Jemalloc;
 #[global_allocator]
 static GLOBAL: Jemalloc = Jemalloc;
 
+use rocksdb::{DB, Options};
+pub fn rocksdb(){
+    let path = "/rocks";
+    {
+        let db = DB::open_default(path).unwrap();
+
+        match db.get(b"my key") {
+            Ok(Some(value)) => println!("retrieved value {}", String::from_utf8(value).unwrap()),
+            Ok(None) => println!("value not found"),
+            Err(e) => println!("operational problem encountered: {}", e),
+        }
+
+        let put_result = db.put(b"my key", b"rocksdb my value");
+        println!("put_result {:?}",put_result);
+
+    }
+}
+
 fn main() {
+    rocksdb();
     let read_result = std::fs::read_to_string("/test.config");
     println!("read_result {:?}",read_result);
 
     let write_result = std::fs::write("/test.config","aaaaaaaa");
     println!("write_result {:?}",write_result);
+
 
 }
