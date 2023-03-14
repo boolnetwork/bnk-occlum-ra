@@ -23,11 +23,12 @@ RUN apt update && apt install m4 make -y
 # And then use "occlum package" to get a minimum subset of files to run in deployment environment.
 # In this demo, the occlum instance is built in debug mode.
 # So "--debug" flag is required for the "occlum package".
-FROM occlum/occlum:0.29.4-ubuntu20.04 as packager
+FROM occlum/occlum:0.29.1-ubuntu20.04 as packager
 WORKDIR /RUST
 COPY ./ ./
 WORKDIR /RUST
-RUN apt update &&\ apt install -y clang
+RUN apt update && \
+    apt install -y clang
 RUN chmod +x ./run_rust_demo_on_occlum_docker.sh && \
     ./run_rust_demo_on_occlum_docker.sh && \
     cd occlum_instance &&\
