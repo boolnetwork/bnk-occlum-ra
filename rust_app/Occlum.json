@@ -1,13 +1,13 @@
 {
     "resource_limits": {
-        "kernel_space_heap_size": "140MB",
+        "kernel_space_heap_size": "300MB",
         "kernel_space_stack_size": "30MB",
         "user_space_size": "1020MB",
         "max_num_of_threads": 32
     },
     "process": {
         "default_stack_size": "30MB",
-        "default_heap_size": "150MB",
+        "default_heap_size": "300MB",
         "default_mmap_size": "1020MB"
     },
     "entry_points": [
