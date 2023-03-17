@@ -83,7 +83,7 @@ pub fn get_fingerprint(key_policy: u16) -> Vec<u8> {
 }
 
 #[cfg(feature = "std")]
-pub fn get_fingerprint_epid() -> Vec<u8> {
+pub fn get_fingerprint_epid(key_policy: u16) -> Vec<u8> {
     let mut epid = occlum::EpidQuote::new();
     let group_id = epid.get_group_id();
     let target_info = epid.get_target_info();
@@ -91,7 +91,7 @@ pub fn get_fingerprint_epid() -> Vec<u8> {
     //report_data.d = [7u8; 64];
     let epid_report = epid.get_epid_report(&target_info, &report_data);
 
-    occlum::get_key(&epid_report.body).to_vec()
+    occlum::get_key(&epid_report.body, key_policy).to_vec()
 }
 
 #[cfg(feature = "std")]

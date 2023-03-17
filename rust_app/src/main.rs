@@ -39,7 +39,7 @@ fn main() {
     let result = IasAttestation::verify(&epid_attestation,now);
     println!("verify epid result {:?}", result);
 
-    let fingerprint = get_fingerprint_epid();
+    let fingerprint = get_fingerprint_epid(2);
     println!("fingerprint {:?}",fingerprint);
     let fingerprint = get_fingerprint(2);
     println!("fingerprint {:?}",fingerprint);
