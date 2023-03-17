@@ -41,6 +41,6 @@ fn main() {
 
     let fingerprint = get_fingerprint_epid();
     println!("fingerprint {:?}",fingerprint);
-    let fingerprint = get_fingerprint();
+    let fingerprint = get_fingerprint(2);
     println!("fingerprint {:?}",fingerprint);
 }
