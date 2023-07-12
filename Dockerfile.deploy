@@ -25,6 +25,9 @@ RUN apt update && apt install m4 make -y
 # So "--debug" flag is required for the "occlum package".
 FROM occlum/occlum:0.29.4-ubuntu20.04 as packager
 WORKDIR /RUST
+RUN rustup install nightly-2023-06-05-x86_64-unknown-linux-gnu && \
+    rustup default nightly-2023-06-05-x86_64-unknown-linux-gnu && \
+    rustup target add x86_64-unknown-linux-musl
 COPY ./ ./
 WORKDIR /RUST
 RUN chmod +x ./run_rust_demo_on_occlum_docker.sh && \

@@ -13,8 +13,8 @@ static GLOBAL: Jemalloc = Jemalloc;
 fn main() {
     env_logger::init();
 
-    let read_result = std::fs::read_to_string("/host/test.config").unwrap();
-    println!("read_result {:?}",read_result);
+    // let read_result = std::fs::read_to_string("/host/test.config").unwrap();
+    // println!("read_result {:?}",read_result);
 
     println!("start");
     let cert_der = match generate_cert_key() {

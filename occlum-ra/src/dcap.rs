@@ -396,17 +396,12 @@ impl DerCertChain {
     const PEM_END_STRING_X509: &'static str = "-----END CERTIFICATE-----";
 
     pub fn from_bytes(data: Vec<u8>) -> Result<Self, DCAPError> {
-        let data = if data[data.len() - 1] == 0 {
-            data[..data.len() - 2].to_vec()
-        } else {
-            data
-        };
         let empty = "";
         let full_chain = String::from_utf8(data).map_err(|_| DCAPError::InvalidPemCert)?;
         let certs: Vec<&str> = full_chain
             .split(DerCertChain::PEM_BEGIN_STRING_X509)
             .map(|s| {
-                let cert = s.trim_end_matches('\n');
+                let cert = s.trim_end_matches('\0').trim_end_matches('\n');
                 match cert.strip_suffix(DerCertChain::PEM_END_STRING_X509) {
                     Some(c) => c.trim_matches('\n'),
                     None => empty,
