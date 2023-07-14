@@ -4,4 +4,4 @@ targets:
   - target: /bin
     copy:
       - files:
-        - ../rust_app/target/x86_64-unknown-linux-musl/debug/rust_app
+        - ../rust_app/target/x86_64-unknown-linux-musl/release/rust_app

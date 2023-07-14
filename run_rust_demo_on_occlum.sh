@@ -3,7 +3,7 @@ set -e
 
 # compile rust_app
 pushd rust_app
-occlum-cargo build
+occlum-cargo build --release
 popd
 
 # initialize occlum workspace
