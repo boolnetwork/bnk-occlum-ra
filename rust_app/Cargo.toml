@@ -9,6 +9,7 @@ edition = "2021"
 libc = "0.2"
 occlum-ra = { path = "../occlum-ra" }
 env_logger = "0.9.0"
+rust-gmp-kzen = "0.5.1"
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 tikv-jemallocator = "0.5"

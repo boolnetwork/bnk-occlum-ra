@@ -30,6 +30,8 @@ RUN rustup install nightly-2023-06-05-x86_64-unknown-linux-gnu && \
     rustup target add x86_64-unknown-linux-musl
 COPY ./ ./
 WORKDIR /RUST
+RUN chmod +x ./gmp_musl.sh
+RUN ./gmp_musl.sh
 RUN chmod +x ./run_rust_demo_on_occlum_docker.sh && \
     ./run_rust_demo_on_occlum_docker.sh && \
     cd occlum_instance &&\

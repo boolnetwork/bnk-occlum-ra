@@ -2,6 +2,7 @@ use occlum_ra;
 
 use occlum_ra::{generate_cert_key, generate_epid, get_fingerprint, get_fingerprint_epid, verify_cert};
 use std::time::{SystemTime, UNIX_EPOCH};
+use gmp::mpz::Mpz;
 use occlum_ra::attestation::{AttestationReport, AttestationStyle, IasAttestation};
 
 #[cfg(not(target_env = "msvc"))]
@@ -13,34 +14,36 @@ static GLOBAL: Jemalloc = Jemalloc;
 fn main() {
     env_logger::init();
 
-    // let read_result = std::fs::read_to_string("/host/test.config").unwrap();
-    // println!("read_result {:?}",read_result);
-
     println!("start");
     let cert_der = match generate_cert_key() {
         Err(e) => panic!("error: {:?}", e),
         Ok((a, b)) => b,
     };
-
     let res = verify_cert(&cert_der);
-
     println!("verify_cert result {:?}", res);
 
-    let result = IasAttestation::create_report("epid".as_bytes()).unwrap();
-    let epid_attestation = AttestationReport{
-        style: AttestationStyle::EPID,
-        data: result.into_payload()
-    };
-
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let result = IasAttestation::verify(&epid_attestation,now);
-    println!("verify epid result {:?}", result);
-
-    let fingerprint = get_fingerprint_epid(2);
-    println!("fingerprint {:?}",fingerprint);
-    let fingerprint = get_fingerprint(2);
-    println!("fingerprint {:?}",fingerprint);
+    println!("GMP rust bindings test");
+    let two: Mpz = From::<i64>::from(2);
+    let eight: Mpz = From::<i64>::from(8);
+    let minuseight: Mpz = From::<i64>::from(-8);
+    let three: Mpz = From::<i64>::from(3);
+    let minusthree: Mpz = From::<i64>::from(-3);
+    assert_eq!(eight.div_floor(&three), two);
+    assert_eq!(eight.div_floor(&minusthree), minusthree);
+    assert_eq!(minuseight.div_floor(&three), minusthree);
+    assert_eq!(minuseight.div_floor(&minusthree), two);
+    println!("test_div_floor pass");
+    let one: Mpz = From::<i64>::from(1);
+    let minusone: Mpz = From::<i64>::from(-1);
+    let two: Mpz = From::<i64>::from(2);
+    let minustwo: Mpz = From::<i64>::from(-2);
+    let three: Mpz = From::<i64>::from(3);
+    let minusthree: Mpz = From::<i64>::from(-3);
+    let eight: Mpz = From::<i64>::from(8);
+    let minuseight: Mpz = From::<i64>::from(-8);
+    assert_eq!(eight.mod_floor(&three), two);
+    assert_eq!(eight.mod_floor(&minusthree), minusone);
+    assert_eq!(minuseight.mod_floor(&three), one);
+    assert_eq!(minuseight.mod_floor(&minusthree), minustwo);
+    println!("test_mod_floor pass");
 }
