@@ -293,22 +293,30 @@ impl IasAttestation {
 
         let sgx_quote: sgx_quote_t = unsafe { core::ptr::read(quote.as_ptr() as *const _) };
 
-        let enclave_field = EnclaveFields { version: sgx_quote.version, sign_type: sgx_quote.sign_type, isv_enclave_quote_status: report_data.isv_enclave_quote_status, mr_enclave: sgx_quote
-            .report_body
-            .mr_enclave
-            .m
-            .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?, mr_signer: sgx_quote
-            .report_body
-            .mr_signer
-            .m
-            .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?, report_data: sgx_quote
-            .report_body
-            .report_data
-            .d
-            .try_into()
-            .map_err(|_| DCAPError::VerifyFailed)?, ..Default::default() };
+        let enclave_field = EnclaveFields {
+            version: sgx_quote.version,
+            sign_type: sgx_quote.sign_type,
+            isv_enclave_quote_status: report_data.isv_enclave_quote_status,
+            mr_enclave: sgx_quote
+                .report_body
+                .mr_enclave
+                .m
+                .try_into()
+                .map_err(|_| DCAPError::VerifyFailed)?,
+            mr_signer: sgx_quote
+                .report_body
+                .mr_signer
+                .m
+                .try_into()
+                .map_err(|_| DCAPError::VerifyFailed)?,
+            report_data: sgx_quote
+                .report_body
+                .report_data
+                .d
+                .try_into()
+                .map_err(|_| DCAPError::VerifyFailed)?,
+            ..Default::default()
+        };
 
         Ok(enclave_field)
     }

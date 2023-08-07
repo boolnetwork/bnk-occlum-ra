@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use std::time::*;
 
 use bit_vec::BitVec;
@@ -22,7 +23,7 @@ const SUBJECT: &str = "SafeMatrix";
 pub fn generate_cert(_payload: String) -> Result<(Vec<u8>, Vec<u8>), String> {
     let (key_pair, key_pair_doc) = ring_key_gen_pcks_8();
     let pub_key = key_pair.public_key().as_ref().to_vec();
-    println!("pub_key in this report:{:?}", pub_key);
+    println!("pub_key in this report:{pub_key:?}");
 
     let report = DcapAttestation::create_report(&pub_key[1..]).unwrap();
 
@@ -31,12 +32,12 @@ pub fn generate_cert(_payload: String) -> Result<(Vec<u8>, Vec<u8>), String> {
         data: report.into_payload(),
     };
 
-    println!("DCAP Report{:?}", re);
+    println!("DCAP Report{re:?}");
 
     let cert_der = match gen_ecc_cert(re.into_payload(), key_pair, pub_key) {
         Ok(r) => r,
         Err(e) => {
-            println!("Error in gen_ecc_cert: {:?}", e);
+            println!("Error in gen_ecc_cert: {e:?}");
             return Err("Error in gen_ecc_cert".to_string());
         }
     };
@@ -48,7 +49,7 @@ pub fn get_attestation_report(pub_key: Vec<u8>) -> Result<String, String> {
     let (attn_report, sig, cert) = match create_attestation_report(pub_key) {
         Ok(r) => r,
         Err(e) => {
-            println!("Error in create_attestation_report: {:?}", e);
+            println!("Error in create_attestation_report: {e:?}");
             return Err("Error in create_attestation_report".to_string());
         }
     };

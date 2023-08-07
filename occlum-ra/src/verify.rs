@@ -21,20 +21,14 @@ pub fn verify_only_report(report_vec: &[u8], now: u64) -> Result<(Vec<u8>, Vec<u
     };
 
     let enclave = match report.style {
-        AttestationStyle::EPID => {
-            
-            match IasAttestation::verify(&report, now) {
-                Err(_e) => return Err("IasAttestation::verify err".to_string()),
-                Ok(enclave) => enclave,
-            }
-        }
-        AttestationStyle::DCAP => {
-            
-            match DcapAttestation::verify(&report, now) {
-                Err(_e) => return Err("DcapAttestation::verify err".to_string()),
-                Ok(enclave) => enclave,
-            }
-        }
+        AttestationStyle::EPID => match IasAttestation::verify(&report, now) {
+            Err(_e) => return Err("IasAttestation::verify err".to_string()),
+            Ok(enclave) => enclave,
+        },
+        AttestationStyle::DCAP => match DcapAttestation::verify(&report, now) {
+            Err(_e) => return Err("DcapAttestation::verify err".to_string()),
+            Ok(enclave) => enclave,
+        },
     };
 
     Ok((enclave.mr_enclave, enclave.report_data))
@@ -52,20 +46,14 @@ pub fn verify(cert: &[u8], now: u64) -> Result<EnclaveFields, String> {
     };
 
     let enclave = match report.style {
-        AttestationStyle::EPID => {
-            
-            match IasAttestation::verify(&report, now) {
-                Err(_e) => return Err("IasAttestation::verify err".to_string()),
-                Ok(enclave) => enclave,
-            }
-        }
-        AttestationStyle::DCAP => {
-            
-            match DcapAttestation::verify(&report, now) {
-                Err(_e) => return Err("DcapAttestation::verify err".to_string()),
-                Ok(enclave) => enclave,
-            }
-        }
+        AttestationStyle::EPID => match IasAttestation::verify(&report, now) {
+            Err(_e) => return Err("IasAttestation::verify err".to_string()),
+            Ok(enclave) => enclave,
+        },
+        AttestationStyle::DCAP => match DcapAttestation::verify(&report, now) {
+            Err(_e) => return Err("DcapAttestation::verify err".to_string()),
+            Ok(enclave) => enclave,
+        },
     };
 
     if enclave.report_data != pub_k.to_vec() {
@@ -122,7 +110,7 @@ pub(crate) fn extract_data(cert_der: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String
 mod tests {
     use super::*;
 
-    static report_err: [u8; 4734] = [
+    static REPORT_ERR: [u8; 4734] = [
         3u8, 0, 2, 0, 0, 0, 0, 0, 9, 0, 13, 0, 147, 154, 114, 51, 247, 156, 76, 169, 148, 10, 13,
         179, 149, 127, 6, 7, 4, 192, 191, 229, 227, 18, 52, 142, 3, 183, 97, 224, 141, 213, 248,
         183, 0, 0, 0, 0, 5, 5, 8, 9, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -341,7 +329,7 @@ mod tests {
         118, 113, 82, 88, 97, 113, 73, 61, 10, 45, 45, 45, 45, 45, 69, 78, 68, 32, 67, 69, 82, 84,
         73, 70, 73, 67, 65, 84, 69, 45, 45, 45, 45, 45, 10, 0,
     ];
-    static report_ok: [u8; 4733] = [
+    static REPORT_OK: [u8; 4733] = [
         3u8, 0, 2, 0, 0, 0, 0, 0, 8, 0, 13, 0, 147, 154, 114, 51, 247, 156, 76, 169, 148, 10, 13,
         179, 149, 127, 6, 7, 4, 192, 191, 229, 227, 18, 52, 142, 3, 183, 97, 224, 141, 213, 248,
         183, 0, 0, 0, 0, 5, 5, 8, 9, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -561,7 +549,7 @@ mod tests {
         73, 70, 73, 67, 65, 84, 69, 45, 45, 45, 45, 45, 10,
     ];
 
-    static epid_report: [u8; 2973] = [
+    static EPID_REPORT: [u8; 2973] = [
         123u8, 34, 105, 100, 34, 58, 34, 49, 54, 53, 48, 57, 54, 53, 48, 50, 55, 49, 52, 53, 57,
         48, 48, 55, 56, 51, 55, 57, 48, 54, 51, 56, 51, 51, 57, 56, 57, 54, 56, 49, 51, 55, 51, 52,
         50, 55, 34, 44, 34, 116, 105, 109, 101, 115, 116, 97, 109, 112, 34, 58, 34, 50, 48, 50, 51,
@@ -704,17 +692,17 @@ mod tests {
         107, 111, 114, 100, 78, 79, 103, 79, 85, 85, 120, 110, 100, 80, 72, 69, 105, 47, 116, 98,
         47, 85, 55, 117, 76, 106, 76, 79, 103, 80, 65, 61, 61,
     ];
-    static now: u64 = 1676365385u64;
-    static now_2: u64 = 1677210866u64;
+    static NOW: u64 = 1676365385u64;
+    static NOW_2: u64 = 1677210866u64;
 
     #[test]
     pub fn test_certs_report() {
         let re = AttestationReport {
             style: AttestationStyle::DCAP,
-            data: report_ok.to_vec(),
+            data: REPORT_OK.to_vec(),
         };
 
-        let result = verify_only_report(&re.into_payload(), now);
+        let result = verify_only_report(&re.into_payload(), NOW);
         println!("result is {:?}", result);
     }
 
@@ -722,10 +710,10 @@ mod tests {
     pub fn test_err_certs_report() {
         let re = AttestationReport {
             style: AttestationStyle::DCAP,
-            data: report_err.to_vec(),
+            data: REPORT_ERR.to_vec(),
         };
 
-        let result = verify_only_report(&re.into_payload(), now);
+        let result = verify_only_report(&re.into_payload(), NOW);
         println!("result is {:?}", result);
     }
 
@@ -733,10 +721,10 @@ mod tests {
     pub fn test_epid_report() {
         let re = AttestationReport {
             style: AttestationStyle::EPID,
-            data: epid_report.to_vec(),
+            data: EPID_REPORT.to_vec(),
         };
 
-        let result = verify_only_report(&re.into_payload(), now_2);
+        let result = verify_only_report(&re.into_payload(), NOW_2);
         println!("result is {:?}", result);
     }
 }

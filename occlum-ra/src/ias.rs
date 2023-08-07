@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::epid_occlum::EpidReport;
 use core::convert::TryFrom;
 use http_req::request::Method::{GET, POST};
@@ -56,15 +57,16 @@ impl Net {
 
     fn http_get_sigrl(&self, ias_url: String, suffix: String, gid: u32) -> Result<Vec<u8>, String> {
         let url = format!("{ias_url}{suffix}{gid:08x}");
-        println!("url {:?}", url);
+        println!("url {url}");
 
-        let addr: Uri =
-            Uri::try_from(url.as_str()).map_err(|_| "Error::Uri bad".to_string())?;
+        let addr: Uri = Uri::try_from(url.as_str()).map_err(|_| "Error::Uri bad".to_string())?;
 
-        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port())).map_err(|_| "Error::TcpStream connect fail".to_string())?;
+        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
+            .map_err(|_| "Error::TcpStream connect fail".to_string())?;
 
         let mut stream = tls::Config::default()
-            .connect(addr.host().unwrap_or(""), stream).map_err(|_| "Error::TLS connect fail".to_string())?;
+            .connect(addr.host().unwrap_or(""), stream)
+            .map_err(|_| "Error::TLS connect fail".to_string())?;
 
         let mut writer = Vec::new();
 
@@ -72,7 +74,8 @@ impl Net {
             .method(GET)
             .header("Ocp-Apim-Subscription-Key", &self.ias_key)
             .header("Connection", "Close")
-            .send(&mut stream, &mut writer).map_err(|_| "Error::RequestBuilder send fail".to_string())?;
+            .send(&mut stream, &mut writer)
+            .map_err(|_| "Error::RequestBuilder send fail".to_string())?;
 
         println!("Status: {} {}", response.status_code(), response.reason());
 
@@ -91,21 +94,22 @@ impl Net {
         encode_json: String,
     ) -> Result<(String, String, String), String> {
         let url = format!("{ias_url}{suffix}");
-        println!("url {:?}", url);
+        println!("url {url}");
         let data = Data {
             isvEnclaveQuote: encode_json,
         };
         let encode_json = serde_json::to_string(&data).unwrap();
-        println!("encode_json {:?}", encode_json);
+        println!("encode_json {encode_json}");
         println!("len {}", encode_json.len());
 
-        let addr: Uri =
-            Uri::try_from(url.as_str()).map_err(|_| "Error::Uri bad".to_string())?;
+        let addr: Uri = Uri::try_from(url.as_str()).map_err(|_| "Error::Uri bad".to_string())?;
 
-        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port())).map_err(|_| "Error::TcpStream connect fail".to_string())?;
+        let stream = TcpStream::connect((addr.host().unwrap(), addr.corr_port()))
+            .map_err(|_| "Error::TcpStream connect fail".to_string())?;
 
         let mut stream = tls::Config::default()
-            .connect(addr.host().unwrap_or(""), stream).map_err(|_| "Error::TLS connect fail".to_string())?;
+            .connect(addr.host().unwrap_or(""), stream)
+            .map_err(|_| "Error::TLS connect fail".to_string())?;
 
         let mut writer = Vec::new();
 
@@ -116,10 +120,11 @@ impl Net {
             .header("Content-Length", &encode_json.len())
             .header("Connection", "Close")
             .body(encode_json.as_bytes())
-            .send(&mut stream, &mut writer).map_err(|_| "Error::RequestBuilder send fail".to_string())?;
+            .send(&mut stream, &mut writer)
+            .map_err(|_| "Error::RequestBuilder send fail".to_string())?;
 
         println!("Status: {} {}", response.status_code(), response.reason());
-        println!("report response: {:?}", response);
+        println!("report response: {response:?}");
 
         // parse the response
         let content_len = response.headers().get("Content-Length").unwrap();
@@ -147,7 +152,7 @@ impl Net {
         let mut attn_report = "".to_string();
         if body_len != 0 {
             attn_report = str::from_utf8(&writer).unwrap().to_string();
-            println!("IasAttestation report: {}", attn_report);
+            println!("IasAttestation report: {attn_report}");
         };
 
         Ok((attn_report, sig, sig_cert))

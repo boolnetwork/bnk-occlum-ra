@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(dead_code)]
 #![allow(clippy::unnecessary_cast)]
-#![allow(unaligned_references)]
 #![allow(clippy::char_lit_as_u8)]
 #![allow(unused_imports)]
 #![allow(clippy::or_fun_call)]
@@ -72,26 +71,23 @@ pub fn verify_dcap_report(report: Vec<u8>) -> Result<(Vec<u8>, Vec<u8>), String>
 }
 
 #[cfg(feature = "std")]
+pub fn get_fingerprint_epid(key_policy: u16) -> Vec<u8> {
+    let mut epid = occlum::EpidQuote::new();
+    let target_info = epid.get_target_info();
+    let report_data = sgx_report_data_t::default();
+    let epid_report = epid.get_epid_report(&target_info, &report_data);
+
+    occlum::get_key(&epid_report.body, key_policy).to_vec()
+}
+
+#[cfg(feature = "std")]
 pub fn get_fingerprint(key_policy: u16) -> Vec<u8> {
     let report_str = "GET KEY";
     let mut dcap_sgx = occlum_dcap::Dcap::new(report_str.as_bytes().to_vec());
-    println!("Generate quote with report data : {:?}", report_str);
     dcap_sgx.dcap_quote_gen().unwrap();
     let report = dcap_sgx.dcap_quote_get_report_body().unwrap();
 
     occlum::get_key(report, key_policy).to_vec()
-}
-
-#[cfg(feature = "std")]
-pub fn get_fingerprint_epid(key_policy: u16) -> Vec<u8> {
-    let mut epid = occlum::EpidQuote::new();
-    let group_id = epid.get_group_id();
-    let target_info = epid.get_target_info();
-    let report_data = sgx_report_data_t::default();
-    //report_data.d = [7u8; 64];
-    let epid_report = epid.get_epid_report(&target_info, &report_data);
-
-    occlum::get_key(&epid_report.body, key_policy).to_vec()
 }
 
 #[cfg(feature = "std")]

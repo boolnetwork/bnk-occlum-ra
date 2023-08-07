@@ -98,8 +98,8 @@ impl Dcap {
         let fam_id_h = <&[u8; 8]>::try_from(fam_id_h).unwrap();
         let fam_id_h = u64::from_le_bytes(*fam_id_h);
         println!("\nSGX ISV Family ID:");
-        println!("\t Low 8 bytes: 0x{:016x?}\t", fam_id_l);
-        println!("\t high 8 bytes: 0x{:016x?}\t", fam_id_h);
+        println!("\t Low 8 bytes: 0x{fam_id_l:016x?}\t");
+        println!("\t high 8 bytes: 0x{fam_id_h:016x?}\t");
 
         // Dump ISV EXT Product ID
         let prod_id = unsafe { (*report_body_ptr).isv_ext_prod_id };
@@ -109,8 +109,8 @@ impl Dcap {
         let prod_id_h = <&[u8; 8]>::try_from(prod_id_h).unwrap();
         let prod_id_h = u64::from_le_bytes(*prod_id_h);
         println!("\nSGX ISV EXT Product ID:");
-        println!("\t Low 8 bytes: 0x{:016x?}\t", prod_id_l);
-        println!("\t high 8 bytes: 0x{:016x?}\t", prod_id_h);
+        println!("\t Low 8 bytes: 0x{prod_id_l:016x?}\t");
+        println!("\t high 8 bytes: 0x{prod_id_h:016x?}\t");
 
         // Dump CONFIG ID
         let conf_id = unsafe { (*report_body_ptr).config_id };
@@ -122,7 +122,7 @@ impl Dcap {
 
         // Dump CONFIG SVN
         let conf_svn = unsafe { (*report_body_ptr).config_svn };
-        println!("\nSGX CONFIG SVN:\t {:04x?}", conf_svn);
+        println!("\nSGX CONFIG SVN:\t {conf_svn:04x?}");
     }
 }
 
@@ -137,7 +137,7 @@ impl Drop for Dcap {
 pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
     let mut dcap_sgx = Dcap::new(report_str.clone());
 
-    println!("Generate quote with report data : {:?}", report_str);
+    println!("Generate quote with report data : {report_str:?}");
     dcap_sgx.dcap_quote_gen().unwrap();
 
     // compare the report data in quote buffer
@@ -145,9 +145,9 @@ pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
     let string = unsafe { (*report_data_ptr).d.to_vec() };
 
     if report_str == string[..report_str.len()] {
-        println!("Report data from Quote: '{:?}' exactly matches.", string);
+        println!("Report data from Quote: '{string:?}' exactly matches.");
     } else {
-        println!("Report data from Quote: '{:?}' doesn't match !!!", string);
+        println!("Report data from Quote: '{string:?}' doesn't match !!!");
     }
 
     dcap_sgx.dcap_dump_quote_info();
@@ -162,15 +162,9 @@ pub fn generate_quote(report_str: Vec<u8>) -> Vec<u8> {
         | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_OUT_OF_DATE_CONFIG_NEEDED
         | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_SW_HARDENING_NEEDED
         | sgx_ql_qv_result_t::SGX_QL_QV_RESULT_CONFIG_AND_SW_HARDENING_NEEDED => {
-            println!(
-                "WARN: App: Verification completed with Non-terminal result: {:?}",
-                result
-            );
+            println!("WARN: App: Verification completed with Non-terminal result: {result:?}");
         }
-        _ => println!(
-            "Error: App: Verification completed with Terminal result: {:?}",
-            result
-        ),
+        _ => println!("Error: App: Verification completed with Terminal result: {result:?}"),
     }
 
     dcap_sgx.quote_buf.clone()
