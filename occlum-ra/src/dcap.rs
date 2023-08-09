@@ -305,25 +305,9 @@ impl DcapAttestationReport {
             sig.as_ref().into(),
         );
 
-        // verify qe signature
-        // verify qe signature
-        #[cfg(feature = "std")]
-        let brw = std::ptr::addr_of!(self.ecdsa_sig.inner.qe_report);
-        #[cfg(feature = "std")]
-        let report = unsafe { brw.read_unaligned() };
-        #[cfg(feature = "std")]
         let qe_data = unsafe {
             slice::from_raw_parts(
-                (&report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
-                SGX_QUOTE_REPORT_BODY_LEN,
-            )
-        };
-
-        // verify qe signature
-        #[cfg(not(feature = "std"))]
-        let qe_data = unsafe {
-            slice::from_raw_parts(
-                (&self.ecdsa_sig.inner.qe_report as *const sgx_report_body_t) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
+                core::ptr::addr_of!(self.ecdsa_sig.inner.qe_report) as *const u8, //std::ptr::addr_of!(self.ecdsa_sig.inner.qe3_report)
                 SGX_QUOTE_REPORT_BODY_LEN,
             )
         };
