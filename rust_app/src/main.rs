@@ -3,6 +3,7 @@
 // use occlum_ra::{generate_cert_key, generate_epid, get_fingerprint, get_fingerprint_epid, verify_cert};
 use std::time::{SystemTime, UNIX_EPOCH};
 use gmp::mpz::Mpz;
+use paillier::{BigInt, KeyGeneration, Paillier};
 // use occlum_ra::attestation::{AttestationReport, AttestationStyle, IasAttestation};
 
 #[cfg(not(target_env = "msvc"))]
