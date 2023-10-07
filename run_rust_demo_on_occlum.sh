@@ -3,7 +3,7 @@ set -e
 
 # compile rust_app
 pushd rust_app
-occlum-cargo build
+occlum-cargo rustc -- -L /opt/occlum/toolchains/gcc/x86_64-linux-musl/lib
 popd
 
 # initialize occlum workspace
