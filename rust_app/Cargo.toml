@@ -10,6 +10,11 @@ libc = "0.2"
 occlum-ra = { path = "../occlum-ra" }
 env_logger = "0.9.0"
 rust-gmp-kzen = { version = "0.5.1", git = "https://github.com/sgx-test/rust-gmp", branch = "static_link" }
+zk-paillier = { git = "https://github.com/sgx-test/zk-paillier", branch = "0.3.12-generic" }
+
+[dependencies.paillier]
+git = "https://github.com/sgx-test/rust-paillier-sgx"
+branch = "0.3.10-generic"
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 tikv-jemallocator = "0.5"
