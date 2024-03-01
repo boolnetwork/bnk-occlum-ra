@@ -11,7 +11,7 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-i
     echo 'deb [arch=amd64] https://occlum.io/occlum-package-repos/debian focal main' | tee /etc/apt/sources.list.d/occlum.list && \
     wget -qO - https://occlum.io/occlum-package-repos/debian/public.key | apt-key add - && \
     apt-get update && \
-    apt-get install -y occlum libsgx-uae-service libsgx-dcap-ql libsgx-dcap-ql-dev libsgx-quote-ex-dev &&\
+    apt-get install -y  occlum=0.29.7-1 occlum-sgx-tools=0.29.7-1 occlum-pal=0.29.7-1 occlum-runtime=0.29.7-1 libsgx-uae-service libsgx-dcap-ql libsgx-dcap-ql-dev libsgx-quote-ex-dev &&\
     apt-get install -y libsgx-urts libsgx-dcap-default-qpl
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -23,7 +23,7 @@ RUN apt update && apt install m4 make -y
 # And then use "occlum package" to get a minimum subset of files to run in deployment environment.
 # In this demo, the occlum instance is built in debug mode.
 # So "--debug" flag is required for the "occlum package".
-FROM occlum/occlum:0.29.4-ubuntu20.04 as packager
+FROM occlum/occlum:0.29.7-ubuntu20.04 as packager
 WORKDIR /RUST
 RUN rustup install nightly-2023-06-05-x86_64-unknown-linux-gnu && \
     rustup default nightly-2023-06-05-x86_64-unknown-linux-gnu && \

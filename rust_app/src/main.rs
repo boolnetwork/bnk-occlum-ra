@@ -1,6 +1,6 @@
 use occlum_ra;
 
-use occlum_ra::{generate_cert_key, generate_epid, get_fingerprint, get_fingerprint_epid, verify_cert};
+use occlum_ra::{generate_cert_key, generate_epid, get_fingerprint, get_fingerprint_ex, get_fingerprint_epid, verify_cert};
 use std::time::{SystemTime, UNIX_EPOCH};
 use occlum_ra::attestation::{AttestationReport, AttestationStyle, IasAttestation};
 
@@ -43,4 +43,15 @@ fn main() {
     println!("fingerprint {:?}",fingerprint);
     let fingerprint = get_fingerprint(2);
     println!("fingerprint {:?}",fingerprint);
+    let key_policy = vec![1u16, 2, 4, 8, 10, 20];
+    let key_name = vec![0u16, 1, 2, 3, 4];
+    let flag = vec![0u16, 1];
+    for name in key_name {
+        for policy in key_policy.clone() {
+            let fingerprint = get_fingerprint_ex(name, policy, flag);
+            if fingerprint != [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] {
+                println!("name {} policy {} fingerprint {:?}", name, policy, fingerprint);
+            }
+        }
+    }
 }

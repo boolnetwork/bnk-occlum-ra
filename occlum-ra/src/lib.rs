@@ -91,6 +91,31 @@ pub fn get_fingerprint(key_policy: u16) -> Vec<u8> {
 }
 
 #[cfg(feature = "std")]
+pub fn get_fingerprint_ex(key_name:u16, key_policy: u16) -> Vec<u8> {
+    let report_str = "GET KEY";
+    let mut dcap_sgx = occlum_dcap::Dcap::new(report_str.as_bytes().to_vec());
+    dcap_sgx.dcap_quote_gen().unwrap();
+    let report = dcap_sgx.dcap_quote_get_report_body().unwrap();
+    if key_name == 0u16 && key_policy == 1u16 {
+        unsafe {
+            println!("{:?}", (*report).cpu_svn.svn);
+            println!("{:?}", (*report).misc_select);
+            println!("{:?}", (*report).isv_ext_prod_id);
+            println!("{:?}", (*report).attributes.flags);
+            println!("{:?}", (*report).attributes.xfrm);
+            println!("{:?}", (*report).mr_enclave.m);
+            println!("{:?}", (*report).mr_signer.m);
+            println!("{:?}", (*report).config_id);
+            println!("{:?}", (*report).isv_prod_id);
+            println!("{:?}", (*report).isv_svn);
+            println!("{:?}", (*report).config_svn);
+            println!("{:?}", (*report).isv_family_id);
+        }
+    }
+    occlum::get_key_with_setting(report, key_name, key_policy).to_vec()
+}
+
+#[cfg(feature = "std")]
 pub fn generate_epid() -> Result<(), String> {
     println!("start epid");
     let mut epid = occlum::EpidQuote::new();
