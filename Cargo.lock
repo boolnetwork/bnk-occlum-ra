@@ -61,6 +61,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "bnk-occlum-ra"
+version = "0.1.0"
+dependencies = [
+ "base64 0.9.3",
+ "bit-vec",
+ "chrono",
+ "hex",
+ "http_req",
+ "httparse",
+ "itertools",
+ "log",
+ "num-bigint",
+ "occlum_dcap",
+ "pem",
+ "rand 0.8.5",
+ "rand_core 0.5.1",
+ "ring",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sgx_types",
+ "sha2",
+ "webpki",
+ "webpki-roots",
+ "yasna",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -247,37 +275,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "occlum-ra"
-version = "0.1.0"
-dependencies = [
- "base64 0.9.3",
- "bit-vec",
- "chrono",
- "hex",
- "http_req",
- "httparse",
- "itertools",
- "log",
- "num-bigint",
- "occlum_dcap",
- "pem",
- "rand 0.8.5",
- "rand_core 0.5.1",
- "ring",
- "rustls",
- "serde",
- "serde_json",
- "sgx_types",
- "sha2",
- "webpki",
- "webpki-roots",
- "yasna",
-]
-
-[[package]]
 name = "occlum_dcap"
 version = "0.1.0"
-source = "git+https://github.com/ABMatrix/occlum#e422a787be0d591bbe1bf85a6dcfd5c7414862f8"
+source = "git+https://github.com/boolnetwork/occlum#e422a787be0d591bbe1bf85a6dcfd5c7414862f8"
 dependencies = [
  "cfg-if",
  "libc",

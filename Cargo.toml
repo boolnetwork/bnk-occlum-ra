@@ -1,5 +1,5 @@
 [package]
-name = "occlum-ra"
+name = "bnk-occlum-ra"
 authors = ["BoolNetwork"]
 edition = "2021"
 version = "0.1.0"
@@ -26,7 +26,7 @@ httparse = { version = "1.3.2", default-features = false }
 http_req = { version = "0.9.0", default-features = false, features = ["rust-tls"] }
 rustls = { version = "0.19", default-features = false, features = ["dangerous_configuration"] }
 rand =  { version = "0.8.5"}
-occlum_dcap = { git = "https://github.com/ABMatrix/occlum", optional = true }
+occlum_dcap = { git = "https://github.com/boolnetwork/occlum", optional = true }
 
 [patch.crates-io]
 ring = { git = "https://github.com/sgx-test/ring" ,default-features = false, features = ["alloc"] }
