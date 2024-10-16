@@ -435,8 +435,7 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 [[package]]
 name = "ring"
 version = "0.16.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3053cf52e236a3ed746dfc745aa9cacf1b791d846bdaf412f60a8d7d6e17c8fc"
+source = "git+https://github.com/sgx-test/ring#876217f9fb20dea3e0b437a71493d5f679a084ff"
 dependencies = [
  "cc",
  "libc",
