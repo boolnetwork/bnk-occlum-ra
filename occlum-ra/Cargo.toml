@@ -1,7 +1,8 @@
 [package]
 name = "occlum-ra"
+authors.workspace = true
+edition.workspace = true
 version = "0.1.0"
-edition = "2021"
 
 [dependencies]
 webpki-roots = { version = "0.21", optional = true }

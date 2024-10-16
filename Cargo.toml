@@ -1,4 +1,10 @@
+[workspace.package]
+authors = ["BoolNetwork"]
+edition = "2021"
+
 [workspace]
+resolver = "2"
+
 members = [
     "occlum-ra",
 ]
